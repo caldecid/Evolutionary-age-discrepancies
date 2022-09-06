@@ -77,9 +77,9 @@ discrepancies.df.1$mu.int <- cut_interval(discrepancies.df.1$mu, 4)
 
 discrepancies.df.1$div.int <- cut_interval(discrepancies.df.1$div, 4)
 
-##root ages for rescaling the ages
+##root ages for rescaling the ages (using "tree.max" from FossilSim)
 
-root.ages <- sapply(Tree.1, function(x)max(nodeHeights(x)))
+root.ages <- sapply(Tree.1, tree.max)
 discrepancies.df.1$root.age <- rep(root.ages, each = 100) 
 
 ##escaling the ages with root age, and consequently the errors
