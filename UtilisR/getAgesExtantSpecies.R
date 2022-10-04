@@ -24,10 +24,15 @@ getAgesExtantSpecies <- function (Taxonomy, Phylo, Tol = NULL) {
   TipAgesCompl <- calculate_tip_ages(Phylo)
   colnames(TipAgesCompl) <- c('Tip_Compl', 'Tip_Length_Compl')
   PhyloExtant <- prune.fossil.tips(Phylo)
-  TipAgesExtant <- calculate_tip_ages(PhyloExtant)
-  colnames(TipAgesExtant) <- c('Tip_Reconstr', 'Tip_Length_Reconstr')
+  TipAgesExtant <- as.data.frame(as_tibble(PhyloExtant))
+  TipAgesExtant <- TipAgesExtant[!is.na(TipAgesExtant$label), ]
+  colnames(TipAgesExtant)[3:4] <- c('Tip_Length_Reconstr', 'Tip_Reconstr')
+  TipAgesExtant$Sisters <- sapply(TipAgesExtant$parent, function(x)
+    length(Descendants(PhyloExtant, x, type = 'tips')[[1]]) - 1)
   TipAgesExtant <- TipAgesExtant[match(TipAgesCompl$Tip_Compl, TipAgesExtant$Tip_Reconstr), ]
-  TipAges <- data.frame(TipAgesCompl, Tip_Length_Reconstr = TipAgesExtant$Tip_Length_Reconstr)
+  TipAges <- data.frame(TipAgesCompl, 
+                        Tip_Length_Reconstr = TipAgesExtant$Tip_Length_Reconstr,
+                        N_Sisters_Reconstr = TipAgesExtant$Sisters)
   TipLabelsOrdered <- getTipLabelOrder(Phylo)
   TipAges <- TipAges[match(TipLabelsOrdered, TipAges$Tip_Compl), ]
   TipAges <- TipAges[!is.na(TipAges$Tip_Length_Reconstr), ]

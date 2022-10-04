@@ -3,6 +3,8 @@ library(FossilSim)
 library(geiger)
 library(picante)
 library(cowplot)
+library(phangorn)
+library(tidytree)
 
 
 source('UtilisR/calculate_tip_ages.R')
