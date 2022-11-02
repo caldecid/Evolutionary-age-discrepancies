@@ -58,26 +58,35 @@ test_data_log <- test_data %>%  transmute(True.age_log = log10(True.age),
 
 
 ##predicting the age
-predict.age <- predict.glm(glm_corrector, newdata = test_data_log,
+predict.glm <- predict.glm(glm_corrector, newdata = test_data_log,
                            type = "response")
 
 ##adding the prediction to the test data set
-test_data_log$predict <- predict.age
+test_data_log$predict.glm <- predict.glm
+
+
+###adding the BNN results
+
+results.bnn <- read_csv("results_bnn.csv")
+
+test_data_log$predict.bnn <- results.bnn$bnn_mean
 
 ##calculating the residuals between the prediction and the true age (log)
-test_data_log$residuals <- test_data_log$predict - test_data_log$True.age_log
+test_data_log$residuals.glm <- test_data_log$predict.glm - test_data_log$True.age_log
 
+test_data_log$residuals.bnn <- test_data_log$predict.bnn - test_data_log$True.age_log
 
 ##MSE between the corrected age and the true age
-mean((test_data_log$residuals^2))
-
+mean((test_data_log$residuals.glm^2))
+mean((test_data_log$residuals.bnn^2))
 ##raw MSE (between the estimated age and the true age)
 mean((test_data_log$True.age_log - test_data_log$Estimated.age_log)^2)
 
 ############graphics #############
 ##grouping the test set by mode of speciation and trees, pivoting longer for ggplot
-results.glm <- test_data_log %>% group_by(mode, anag, div) %>%
-              summarise(mse.glm = mean(residuals^2),
+results.general <- test_data_log %>% group_by(mode, anag, div) %>%
+              summarise(mse.glm = mean(residuals.glm^2),
+              mse.bnn = mean(residuals.bnn^2),
               mse.raw = mean((True.age_log- Estimated.age_log)^2)) %>% 
               mutate(speciation = case_when(mode ==0 & anag == 0 ~ "Budding",
                               mode == 1 & anag == 1 ~ "Anagenetic-cladogenetic",
@@ -86,15 +95,20 @@ results.glm <- test_data_log %>% group_by(mode, anag, div) %>%
                   pivot_longer(cols = starts_with("mse"), names_to = "model",
                                     names_prefix = "mse.", values_to = "MSE")
 
-results.glm$speciation <- as.factor(results.glm$speciation)
-results.glm$model <- as.factor(results.glm$model)
+results.general$speciation <- as.factor(results.general$speciation)
+results.general$model <- as.factor(results.general$model)
 
 ##ordering the factors for perfoming graphics
-results.glm$model <- factor(results.glm$model, levels = c("raw", "glm"))
-results.glm$speciation <- factor(results.glm$speciation,
+results.general$model <- factor(results.general$model,
+                                levels = c("raw", "glm", "bnn"))
+
+results.general$speciation <- factor(results.general$speciation,
                           levels = c("Budding","Anagenetic-budding",
                                      "Cladogenetic", "Anagenetic-cladogenetic"))
 ##graphics
-ggplot(results.glm, aes(x = speciation, y = MSE, color = model))+
-  geom_boxplot()
-  
+ggplot(results.general, aes(x = speciation, y = MSE, color = model))+
+  geom_boxplot()+
+  ylim(0,1)
+
+
+
