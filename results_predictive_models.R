@@ -62,10 +62,27 @@ results.general$speciation <- factor(results.general$speciation,
                                      levels = c("Budding","Anagenetic-budding",
                                                 "Cladogenetic", "Anagenetic-cladogenetic"))
 ##graphics
-ggplot(results.general, aes(x = speciation, y = MSE, color = model))+
-  geom_boxplot()+
-  ylim(0,1)
+#themes
+mynamestheme <- theme(strip.text = element_text(family = "serif", size = (12)),
+                      axis.title = element_text(family = "serif", size = (13),
+                                                face = "bold"),
+                      axis.text = element_text(family = "serif", size = (12)))
 
+##pdf object
+png("boxplot.mse.png", width = 16, height = 12, units = "cm", 
+    pointsize = 8, res = 300)
+
+box.mse <- ggplot(results.general, aes(x = speciation, y = MSE, color = model))+
+           geom_boxplot()+
+           xlab("Speciation mode")+
+           ylab("Mean Squared Error")+
+           #geom_jitter(size = 1, alpha=0.5)+
+            ylim(0,1)+
+            theme_bw()
+
+box.mse + mynamestheme
+
+dev.off()
 
 ###for the species age coverage graphic
 results.species <- results %>% select(true.age.log, mode, anag,
@@ -99,7 +116,21 @@ results.species$speciation <- factor(results.species$speciation,
                                      levels = c("Budding","Anagenetic-budding",
                                                 "Cladogenetic", "Anagenetic-cladogenetic"))
 
-ggplot(results.species, aes(x = speciation, y = sp_coverage, fill = model))+ 
-  geom_bar(stat = "identity", position="dodge") +
-  xlab("Modes of speciation")+
-  ylab("Species age coverage (%)")
+
+###graphics
+png("coverage.png", width = 16, height = 12, units = "cm", 
+    pointsize = 8, res = 300)
+
+coverage <- ggplot(results.species, aes(x = speciation, y = sp_coverage, fill = model))+ 
+           geom_bar(stat = "identity", position="dodge") +
+            xlab("Speciation mode")+
+           ylab("Species age coverage (%)")+
+           theme_classic()
+
+coverage + mynamestheme
+
+dev.off()
+
+
+
+

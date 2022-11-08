@@ -67,15 +67,17 @@ pred.lm <- predict(lm_corrector, newdata = test_data_log,
 pred.lm <- as.data.frame(pred.lm)
 
 
+##results linear model
+results.lm <- tibble(true.age.log = test_data_log$True.age_log,
+                    Estimated.age.log = test_data_log$Estimated.age_log,
+                    mode = test_data_log$mode,
+                    anag = test_data_log$anag,
+                    div = test_data_log$div,
+                    lm.mean = pred.lm$fit,
+                    lm.lowCI = pred.lm$lwr,
+                    lm.upCI = pred.lm$upr)
 
 
-##adding the lm prediction to the test data set
-test_data_log$predict.lm <- pred.lm$fit
-
-
-##adding the lm Confidence intervals
-test_data_log$lm_low <- pred.lm$lwr
-
-test_data_log$lm_up <- pred.lm$upr
+write_csv(results.lm, file = "results_lm.csv")
 
 
