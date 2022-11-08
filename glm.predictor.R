@@ -1,5 +1,5 @@
 
-# GLM correcting estimated age --------------------------------------------
+# Models for correcting species age -------------------------------------------
 
 ##packages
 library(tidyverse)
@@ -27,13 +27,14 @@ train_data_log <- train_data %>% transmute(True.age_log = log10(True.age),
              
                                         
 
-##fitting the glm model
+##fitting the Linear model
 
 formula <- True.age_log~.
 
-glm_corrector <- glm(formula, data = train_data_log)
 
-summary(glm_corrector)
+lm_corrector <- lm(formula, data = train_data_log)
+
+summary(lm_corrector)
 
 ##calling test data
 test.predictors <- read_csv("ages.test.predictors.txt")
@@ -47,7 +48,7 @@ test_data <- cbind(test.response, test.predictors)
 #the ones that enter in the model
 
 test_data_log <- test_data %>%  transmute(True.age_log = log10(True.age),
-                                          Estimated.age_log = log10(Estimated.age),
+                                       Estimated.age_log = log10(Estimated.age),
                                           root.age_log = log10(root.age),
                                           div = div.est,
                                           turnover = turnover.est,
@@ -57,58 +58,24 @@ test_data_log <- test_data %>%  transmute(True.age_log = log10(True.age),
                                           anag = anag) 
 
 
-##predicting the age
-predict.glm <- predict.glm(glm_corrector, newdata = test_data_log,
-                           type = "response")
-
-##adding the prediction to the test data set
-test_data_log$predict.glm <- predict.glm
 
 
-###adding the BNN results
+##predicting age with the lm 
+pred.lm <- predict(lm_corrector, newdata = test_data_log,
+                   interval = "prediction")
 
-results.bnn <- read_csv("results_bnn.csv")
+pred.lm <- as.data.frame(pred.lm)
 
-test_data_log$predict.bnn <- results.bnn$bnn_mean
 
-##calculating the residuals between the prediction and the true age (log)
-test_data_log$residuals.glm <- test_data_log$predict.glm - test_data_log$True.age_log
 
-test_data_log$residuals.bnn <- test_data_log$predict.bnn - test_data_log$True.age_log
 
-##MSE between the corrected age and the true age
-mean((test_data_log$residuals.glm^2))
-mean((test_data_log$residuals.bnn^2))
-##raw MSE (between the estimated age and the true age)
-mean((test_data_log$True.age_log - test_data_log$Estimated.age_log)^2)
+##adding the lm prediction to the test data set
+test_data_log$predict.lm <- pred.lm$fit
 
-############graphics #############
-##grouping the test set by mode of speciation and trees, pivoting longer for ggplot
-results.general <- test_data_log %>% group_by(mode, anag, div) %>%
-              summarise(mse.glm = mean(residuals.glm^2),
-              mse.bnn = mean(residuals.bnn^2),
-              mse.raw = mean((True.age_log- Estimated.age_log)^2)) %>% 
-              mutate(speciation = case_when(mode ==0 & anag == 0 ~ "Budding",
-                              mode == 1 & anag == 1 ~ "Anagenetic-cladogenetic",
-                              mode == 0 & anag == 1~ "Anagenetic-budding",
-                              mode == 1 & anag == 0 ~ "Cladogenetic"))%>% 
-                  pivot_longer(cols = starts_with("mse"), names_to = "model",
-                                    names_prefix = "mse.", values_to = "MSE")
 
-results.general$speciation <- as.factor(results.general$speciation)
-results.general$model <- as.factor(results.general$model)
+##adding the lm Confidence intervals
+test_data_log$lm_low <- pred.lm$lwr
 
-##ordering the factors for perfoming graphics
-results.general$model <- factor(results.general$model,
-                                levels = c("raw", "glm", "bnn"))
-
-results.general$speciation <- factor(results.general$speciation,
-                          levels = c("Budding","Anagenetic-budding",
-                                     "Cladogenetic", "Anagenetic-cladogenetic"))
-##graphics
-ggplot(results.general, aes(x = speciation, y = MSE, color = model))+
-  geom_boxplot()+
-  ylim(0,1)
-
+test_data_log$lm_up <- pred.lm$upr
 
 

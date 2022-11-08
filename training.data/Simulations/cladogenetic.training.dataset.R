@@ -43,6 +43,7 @@ for(i in seq_along(mu.vector)){
 
 Taxa.1.list <- lapply(Tree.1, sim.taxonomy, beta = 1, lambda.a = 0)
 
+save(Tree.1, Taxa.1.list, file = "cladogenetic.train.Tree.Taxa.RData")
 
 ##Calculating estimated and true ages
 TaxaExtant <- Map(getAgesExtantSpecies, Taxa.1.list, Tree.1)
@@ -61,22 +62,37 @@ clado.df$number.sp <- rep(Ntip, Ntip)
 ##root ages
 root.ages <- sapply(Tree.1, tree.max)
 clado.df$root.age <- rep(root.ages, Ntip)
+##budding speciation = 0 ; cladogenetic = 1
+clado.df$mode <- rep(1, nrow(clado.df))
+##anagenetic = 1; not anagenetic = 0
+clado.df$anag <- rep(0, nrow(clado.df))
+##renaming columns
+clado.df <- clado.df %>% rename(True.age = Age,
+                               Estimated.age = Tip_Length_Reconstr,
+                               N_sisters = N_Sisters_Reconstr) 
 
 ##selecting predictors
-clado.predictors <- clado.df %>% rename(True.age = Age,
-                                            Estimated.age = Tip_Length_Reconstr)  %>% 
-  select(Estimated.age, root.age, div, turnover, number.sp, mode) 
+clado.predictors <- clado.df %>% select(Estimated.age, root.age,
+                                        div, turnover, number.sp, mode,
+                                        N_sisters, anag) 
 
-##budding speciation = 0 ; cladogenetic = 1
-clado.predictors$mode <- rep(1, nrow(clado.predictors))
-
-##clado response
-clado.true.age <- as_tibble(clado.df$Age)
-colnames(clado.true.age) <- "true.age"
-
-clado.true.age$mode <- rep(1, nrow(clado.predictors))
+#clado.response
+clado.response <- clado.df %>% select(True.age)
 
 
 # clado training dataset ----------------------------------
 
 write_xlsx(clado.df, "clado.training.dataset.xlsx")
+
+
+
+# ages predictors -----------------------------------------------------------
+ages.predictors <- rbind(budding.predictors, clado.predictors)
+
+write_xlsx(ages.predictors, "ages.training.predictors.xlsx")
+
+# true.age ----------------------------------------------------------------
+
+ages.true.df <- rbind(budding.true.age, clado.true.age)
+
+write_xlsx(ages.true.df, "ages.training.response.xlsx")

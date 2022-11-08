@@ -1,3 +1,4 @@
+
 # Budding speciation diversification and turnover rates -------------------
 library(TreeSim)
 library(FossilSim)
@@ -10,6 +11,8 @@ library(ggplot2)
 library(geiger)
 library(readr)
 library(writexl)
+library(phangorn)
+library(tidytree)
 
 
 ##setting seed for replication
@@ -43,6 +46,12 @@ for(i in seq_along(mu.vector)){
 Taxa.1.list <- lapply(Tree.1, sim.taxonomy, beta = 0, lambda.a = 0)
 
 
+##saving taxonomies and Trees
+save(Tree.1, Taxa.1.list, file = "budding.train.Tree.Taxa.RData")
+
+##get extant species
+
+
 ##Calculating estimated and true ages
 TaxaExtant <- Map(getAgesExtantSpecies, Taxa.1.list, Tree.1)
 
@@ -60,22 +69,29 @@ budding.df$number.sp <- rep(Ntip, Ntip)
 ##root ages
 root.ages <- sapply(Tree.1, tree.max)
 budding.df$root.age <- rep(root.ages, Ntip)
-
-##selecting predictors
-budding.predictors <- budding.df %>% rename(True.age = Age,
-                                      Estimated.age = Tip_Length_Reconstr)  %>% 
-                     select(Estimated.age, root.age, div, turnover, number.sp, mode) 
-
 ##budding speciation = 0 ; cladogenetic = 1
-budding.predictors$mode <- rep(0, nrow(budding.predictors))
+budding.df$mode <- rep(0, nrow(budding.df))
+##anagenetic = 1; not anagenetic = 0
+budding.df$anag <- rep(0, nrow(budding.df))
+
+##Renaming dataframe
+budding.df <- budding.df %>% rename(True.age = Age,
+                                      Estimated.age = Tip_Length_Reconstr,
+                                      N_sisters = N_Sisters_Reconstr)  
+
+##predictor
+budding.predictors <- budding.df %>% 
+                     select(Estimated.age, root.age, div, turnover, number.sp,
+                            mode, N_sisters, anag) 
+
+
 
 ##budding response
-budding.true.age <- as_tibble(budding.df$Age)
-colnames(budding.true.age) <- "true.age"
+budding.reponse <- budding.df %>% select(True.age)
 
-budding.true.age$mode <- rep(0, nrow(budding.predictors))
 
 
 # budding training dataset ----------------------------------
 
 write_xlsx(budding.df, "budding.training.dataset.xlsx")
+
