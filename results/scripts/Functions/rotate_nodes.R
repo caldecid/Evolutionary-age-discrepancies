@@ -43,40 +43,14 @@ rotate_nodes <- function(tree){
 ##ape. Torsten's implementation
 
 rotateNodes <- function(Tree) {
-  ##list to store the rotated trees
-  trees.1000 <- vector("list", length = 1000)
-  
-  NumTips <- Ntip(Tree)
-  Nodes <- (NumTips+1):(2 * NumTips - 1)
-  Done <- FALSE
-  while (!Done) {
-    x <- sample(Nodes, size = round(1.0 * length(Nodes)))
-    TreeRotated <- Tree
-    success_rotate <- 0
-    for(j in 1:length(x)){
-      TreeTmp <- tryCatch(ape::rotate(TreeRotated, node = x[j]),
-                          error = function(e) NA,
-                          warning = function(w) NA)
-      if (!all(is.na(TreeTmp))) {
-        # Why does rotate() messing up the tree structure?
-        # Saver to convert to string and back to tree
-        TreeString <- write.tree(TreeTmp)
-        TreeTmp <- read.tree(text = TreeString)
-        TreeRotated <- TreeTmp
-        success_rotate <- success_rotate + 1
-      }
-    }
-    if (success_rotate == length(x)) {
-      png_null_device(4, 4)
-      plot_ok <- tryCatch(plot.phylo(TreeRotated, plot = FALSE),
-                          error = function(e) NA,
-                          warning = function(w) NA)
-      dev.off()
-      if (all(!is.na(plot_ok))) {
-        # All attempts to rotate where successfull and phylogeny can be plotted
-        Done <- TRUE
-      }
-    }
+  TreeRotated <- Tree
+  NumTips <- Ntip(TreeRotated)
+  Nodes <- (NumTips + 1):(2 * NumTips - 1)
+  ShuffledNodes <- sample(Nodes, size = length(Nodes))
+  for(j in ShuffledNodes) {
+    TreeRotated <- ape::rotate(TreeRotated, node = j)
+    TreeString <- write.tree(TreeRotated)
+    TreeRotated <- read.tree(text = TreeString)
   }
   return(TreeRotated)
 }
