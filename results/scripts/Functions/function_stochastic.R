@@ -1,6 +1,3 @@
-##sourcing the libraries and the directories
-source(file.path(getwd(), "/source.R"))
-
 
 # function stochastic species ages ----------------------------------------
 
