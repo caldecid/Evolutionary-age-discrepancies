@@ -1,11 +1,11 @@
 
-# stochastic function with Torsten's rotating function -------------------------
+# stochastic function  -------------------------
 
 ##Function for rotating randomly 100% of the nodes of a phylogeny and repeating 
 ## this procedure 1000 times. The aim is to generate a distribution of probable 
 ## ages for each tip
 
-stochastic.sp.age.torsten <- function(tree){
+stochastic.sp.age <- function(tree){
   
   ##tree = phylogenetic tree
   
