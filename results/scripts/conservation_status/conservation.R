@@ -263,6 +263,7 @@ ages.total <- rbind(ages.high.total, ages.int.total, ages.low.total) %>%
                      tree = tree.x,
                      root.age = root.age.x)
 
+write_csv(ages.total, file = file.path(getwd(), pro, c_status, "ages.total.csv"))
 
 # Figures -----------------------------------------------------------------
 
