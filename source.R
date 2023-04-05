@@ -29,6 +29,7 @@ library(TreeSimGM)
 library(Taxonstand)
 library(HDInterval)
 library(arules)
+library(gridExtra)
 
 # set working directory -----------
 wd <- "/home/alunos/Documents/caldecid/Evolutionary-age-discrepancies"
