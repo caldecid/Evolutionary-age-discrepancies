@@ -33,7 +33,7 @@ library(gridExtra)
 
 # set working directory -----------
 wd <- "/home/alunos/Documents/caldecid/Evolutionary-age-discrepancies"
-setwd(wd)
+
 
 ### [] create variables for directory relative location -------
 
@@ -44,6 +44,7 @@ setwd(wd)
 scripts <- "results/scripts"
 
 functions <- "Functions"
+
 
 functions_dir <- list.files(paste0(scripts, "/", functions), full.names = TRUE)
 

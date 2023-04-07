@@ -126,7 +126,7 @@ ages.low <- ages.low %>% mutate(rTrue.age = True.age/root.age,
 ages.low$extinction <- rep("low", nrow(ages.low))
 
 ##species name
-ages.low$species <- paste0(ages.low$lThe abel,".", ages.low$tree)
+ages.low$species <- paste0(ages.low$label,".", ages.low$tree)
 
 
 # stochastic function -----------------------------------------------------
@@ -263,7 +263,12 @@ ages.total <- rbind(ages.high.total, ages.int.total, ages.low.total) %>%
                      tree = tree.x,
                      root.age = root.age.x)
 
-write_csv(ages.total, file = file.path(getwd(), pro, c_status, "ages.total.csv"))
+##saving
+write_csv(ages.total, file = file.path(getwd(), pro,
+                                       c_status, "ages.total.csv"))
+
+ages.total <- read_csv(file = file.path(getwd(),
+                                        pro, c_status, "ages.total.csv"))
 
 # Figures -----------------------------------------------------------------
 
