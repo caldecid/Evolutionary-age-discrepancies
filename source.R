@@ -30,6 +30,7 @@ library(Taxonstand)
 library(HDInterval)
 library(arules)
 library(gridExtra)
+library(grid)
 
 # set working directory -----------
 wd <- "/home/alunos/Documents/caldecid/Evolutionary-age-discrepancies"

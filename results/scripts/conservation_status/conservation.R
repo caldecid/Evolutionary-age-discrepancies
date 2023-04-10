@@ -299,9 +299,9 @@ png("text/figures/Figure7.conservation_true.vs.phylo.png", width = 15, height = 
 p1 <- ggplot(ages.total.join, aes(x = status, y = log(True.age+1)))+
   geom_boxplot(outlier.shape  = NA)+
   geom_jitter(color="black", size=0.4, alpha = 0.1)+
-  facet_wrap(~extinction, labeller = as_labeller(c(high = "High",
-                                                intermediate = "Intermediate",
-                                                low = "Low")))+
+  facet_wrap(~extinction, labeller = as_labeller(c(high = "High extinction",
+                                    intermediate = "Intermediate extinction",
+                                    low = "Low extinction")))+
   ylab("log(True age + 1)")+
   xlab(NULL)+
   theme_bw()+
@@ -311,9 +311,9 @@ p1 <- ggplot(ages.total.join, aes(x = status, y = log(True.age+1)))+
 p2 <- ggplot(ages.total.join, aes(x = status, y = log(Estimated.age+1)))+
   geom_boxplot(outlier.shape = NA)+
   geom_jitter(color="black", size=0.4, alpha=0.1)+
-  facet_wrap(~extinction, labeller = as_labeller(c(high = "High",
-                                                intermediate = "Intermediate",
-                                                  low = "Low")))+
+  facet_wrap(~extinction, labeller = as_labeller(c(high = "High extinction",
+                                    intermediate = "Intermediate extinction",
+                                      low = "Low extinction")))+
   ylab("log(Phylogenetic age + 1)")+
   xlab("Conservation status")+
   theme_bw()+
@@ -336,9 +336,9 @@ png("text/figures/Figure8.conservation_true.vs.sto.png", width = 15, height = 15
 p1 <- ggplot(ages.total.join, aes(x = status, y = log(True.age+1)))+
   geom_boxplot(outlier.shape  = NA)+
   geom_jitter(color="black", size=0.4, alpha = 0.1)+
-  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low",
-                                                    intermediate = "Intermediate",
-                                                    high = "High")))+
+  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low extinction",
+                                  intermediate = "Intermediate extinction",
+                                  high = "High extinction")))+
   ylab("log(True age + 1)")+
   xlab(NULL)+
   theme_bw()+
@@ -348,9 +348,9 @@ p1 <- ggplot(ages.total.join, aes(x = status, y = log(True.age+1)))+
 p2 <- ggplot(ages.total.join, aes(x = status, y = log(max.prob.age + 1)))+
   geom_boxplot(outlier.shape = NA)+
   geom_jitter(color="black", size=0.4, alpha=0.1)+
-  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low",
-                                                intermediate = "Intermediate",
-                                                high = "High")))+
+  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low extinction",
+                                      intermediate = "Intermediate extinction",
+                                      high = "High extinction")))+
   ylab("log(Highest probable age + 1)")+
   xlab("Conservation status")+
   theme_bw()+
@@ -376,9 +376,9 @@ png("text/figures/Figure8.1.conservation.true.vs.mean.sto.png",
 p1 <- ggplot(ages.total.join, aes(x = status, y = log(True.age+1)))+
   geom_boxplot(outlier.shape  = NA)+
   geom_jitter(color="black", size=0.4, alpha = 0.1)+
-  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low",
-                                                   intermediate = "Intermediate",
-                                                   high = "High")))+
+  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low extinction",
+                                       intermediate = "Intermediate extinction",
+                                       high = "High extinction")))+
   ylab("log(True age + 1)")+
   xlab(NULL)+
   theme_bw()+
@@ -388,9 +388,9 @@ p1 <- ggplot(ages.total.join, aes(x = status, y = log(True.age+1)))+
 p2 <- ggplot(ages.total.join, aes(x = status, y = log(mean.age + 1)))+
   geom_boxplot(outlier.shape = NA)+
   geom_jitter(color="black", size=0.4, alpha=0.1)+
-  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low",
-                                                   intermediate = "Intermediate",
-                                                   high = "High")))+
+  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low extinction",
+                                     intermediate = "Intermediate extinction",
+                                     high = "High extinction")))+
   ylab("log(Mean probable age + 1)")+
   xlab("Conservation status")+
   theme_bw()+
@@ -429,9 +429,9 @@ png("text/figures/Figure9.conservation_true.vs.phylo.no.effects.png",
 p1 <- ggplot(ages.total.join.random, aes(x = status, y = log(True.age+1)))+
   geom_boxplot(outlier.shape  = NA)+
   geom_jitter(color="black", size=0.4, alpha = 0.1)+
-  facet_wrap(~extinction, labeller = as_labeller(c(high = "High",
-                                                   intermediate = "Intermediate",
-                                                   low = "Low")))+
+  facet_wrap(~extinction, labeller = as_labeller(c(high = "High extinction",
+                                     intermediate = "Intermediate extinction",
+                                     low = "Low extinction")))+
   ylab("log(True age + 1)")+
   xlab(NULL)+
   theme_bw()+
@@ -441,9 +441,9 @@ p1 <- ggplot(ages.total.join.random, aes(x = status, y = log(True.age+1)))+
 p2 <- ggplot(ages.total.join.random, aes(x = status, y = log(Estimated.age+1)))+
   geom_boxplot(outlier.shape = NA)+
   geom_jitter(color="black", size=0.4, alpha=0.1)+
-  facet_wrap(~extinction, labeller = as_labeller(c(high = "High",
-                                                   intermediate = "Intermediate",
-                                                   low = "Low")))+
+  facet_wrap(~extinction, labeller = as_labeller(c(high = "High extinction",
+                                     intermediate = "Intermediate extinction",
+                                     low = "Low extinction")))+
   ylab("log(Phylogenetic age + 1)")+
   xlab("Conservation status")+
   theme_bw()+
@@ -468,9 +468,9 @@ png("text/figures/Figure9.1.conservation_true.vs.sto.no.effect.png",
 p1 <- ggplot(ages.total.join.random, aes(x = status, y = log(True.age+1)))+
   geom_boxplot(outlier.shape  = NA)+
   geom_jitter(color="black", size=0.4, alpha = 0.1)+
-  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low",
-                                                   intermediate = "Intermediate",
-                                                   high = "High")))+
+  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low extinction",
+                                       intermediate = "Intermediate extinction",
+                                       high = "High extinction")))+
   ylab("log(True age + 1)")+
   xlab(NULL)+
   theme_bw()+
@@ -480,9 +480,9 @@ p1 <- ggplot(ages.total.join.random, aes(x = status, y = log(True.age+1)))+
 p2 <- ggplot(ages.total.join.random, aes(x = status, y = log(max.prob.age + 1)))+
   geom_boxplot(outlier.shape = NA)+
   geom_jitter(color="black", size=0.4, alpha=0.1)+
-  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low",
-                                                   intermediate = "Intermediate",
-                                                   high = "High")))+
+  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low extinction",
+                                       intermediate = "Intermediate extinction",
+                                       high = "High extinction")))+
   ylab("log(Highest probable age + 1)")+
   xlab("Conservation status")+
   theme_bw()+
@@ -508,9 +508,9 @@ png("text/figures/Figure9.2.conservation.true.vs.mean.sto.no.effect.png",
 p1 <- ggplot(ages.total.join.random, aes(x = status, y = log(True.age+1)))+
   geom_boxplot(outlier.shape  = NA)+
   geom_jitter(color="black", size=0.4, alpha = 0.1)+
-  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low",
-                                                   intermediate = "Intermediate",
-                                                   high = "High")))+
+  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low extinction",
+                                       intermediate = "Intermediate extinction",
+                                       high = "High extinction")))+
   ylab("log(True age + 1)")+
   xlab(NULL)+
   theme_bw()+
@@ -520,9 +520,9 @@ p1 <- ggplot(ages.total.join.random, aes(x = status, y = log(True.age+1)))+
 p2 <- ggplot(ages.total.join.random, aes(x = status, y = log(mean.age + 1)))+
   geom_boxplot(outlier.shape = NA)+
   geom_jitter(color="black", size=0.4, alpha=0.1)+
-  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low",
-                                                   intermediate = "Intermediate",
-                                                   high = "High")))+
+  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low extinction",
+                                       intermediate = "Intermediate extinction",
+                                       high = "High extinction")))+
   ylab("log(Mean probable age + 1)")+
   xlab("Conservation status")+
   theme_bw()+
@@ -552,22 +552,24 @@ ages.mean$tree <- paste0(ages.mean$tree, ".",
                               ages.mean$extinction)
 
 
+##mean true age vs mean phylo age
+
 png("text/figures/Figure10.line.true.vs.phy.png", 
     width = 15, height = 15,
     units = "cm", 
     pointsize = 8, res = 300)
 
 
-##mean true age
+
 f1 <-ggplot(ages.mean, aes(x = status, y = log(mean.true +1), group = tree,
                            color = extinction))+
   scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
   geom_point(size=3, shape=21, fill="white")+
   geom_line(alpha = 0.5)+
   facet_wrap(~extinction,
-             labeller = as_labeller(c(low = "Low",
-                                    intermediate = "Intermediate",
-                                             high = "High")))+
+             labeller = as_labeller(c(low = "Low extinction",
+                                    intermediate = "Intermediate extinction",
+                                             high = "High extinction")))+
   theme_bw()+
   ylab("log(True age + 1)")+
   xlab(NULL)+
@@ -582,9 +584,9 @@ f2 <-ggplot(ages.mean, aes(x = status, y = log(mean.phy +1), group = tree,
   geom_point(size=3, shape=21, fill="white")+
   geom_line(alpha = 0.5)+
   facet_wrap(~extinction,
-             labeller = as_labeller(c(low = "Low",
-                                        intermediate = "Intermediate",
-                                        high = "High")))+
+             labeller = as_labeller(c(low = "Low extinction",
+                                        intermediate = "Intermediate extinction",
+                                        high = "High extinction")))+
   theme_bw()+
   ylab("log(Phylogenetic age + 1)")+
   xlab(NULL)+
@@ -619,9 +621,9 @@ f1 <-ggplot(ages.mean, aes(x = status, y = log(mean.true +1), group = tree,
   geom_point(size=3, shape=21, fill="white")+
   geom_line(alpha = 0.5)+
   facet_wrap(~extinction,
-             labeller = as_labeller(c(low = "Low",
-                                      intermediate = "Intermediate",
-                                      high = "High")))+
+             labeller = as_labeller(c(low = "Low extinction",
+                                      intermediate = "Intermediate extinction",
+                                      high = "High extinction")))+
   theme_bw()+
   ylab("log(True age + 1)")+
   xlab(NULL)+
@@ -636,9 +638,9 @@ f2 <-ggplot(ages.mean, aes(x = status, y = log(mean.sto +1), group = tree,
   geom_point(size=3, shape=21, fill="white")+
   geom_line(alpha = 0.5)+
   facet_wrap(~extinction,
-             labeller = as_labeller(c(low = "Low",
-                                      intermediate = "Intermediate",
-                                      high = "High")))+
+             labeller = as_labeller(c(low = "Low extinction",
+                                      intermediate = "Intermediate extinction",
+                                      high = "High extinction")))+
   theme_bw()+
   ylab("log(Highest probability age + 1)")+
   xlab(NULL)+
@@ -672,9 +674,9 @@ f1 <-ggplot(ages.mean, aes(x = status, y = log(mean.true +1), group = tree,
   geom_point(size=3, shape=21, fill="white")+
   geom_line(alpha = 0.5)+
   facet_wrap(~extinction,
-             labeller = as_labeller(c(low = "Low",
-                                      intermediate = "Intermediate",
-                                      high = "High")))+
+             labeller = as_labeller(c(low = "Low extinction",
+                                      intermediate = "Intermediate extinction",
+                                      high = "High extinction")))+
   theme_bw()+
   ylab("log(True age + 1)")+
   xlab(NULL)+
@@ -689,9 +691,9 @@ f2 <-ggplot(ages.mean, aes(x = status, y = log(mean.mean +1), group = tree,
   geom_point(size=3, shape=21, fill="white")+
   geom_line(alpha = 0.5)+
   facet_wrap(~extinction,
-             labeller = as_labeller(c(low = "Low",
-                                      intermediate = "Intermediate",
-                                      high = "High")))+
+             labeller = as_labeller(c(low = "Low extinction",
+                                      intermediate = "Intermediate extinction",
+                                      high = "High extinction")))+
   theme_bw()+
   ylab("log(Mean probable age + 1)")+
   xlab(NULL)+
@@ -744,9 +746,9 @@ f1 <-ggplot(ages.mean.random, aes(x = status, y = log(mean.true +1), group = tre
   geom_point(size=3, shape=21, fill="white")+
   geom_line(alpha = 0.5)+
   facet_wrap(~extinction,
-             labeller = as_labeller(c(low = "Low",
-                                      intermediate = "Intermediate",
-                                      high = "High")))+
+             labeller = as_labeller(c(low = "Low extinction",
+                                      intermediate = "Intermediate extinction",
+                                      high = "High extinction")))+
   theme_bw()+
   ylab("log(True age + 1)")+
   xlab(NULL)+
@@ -761,9 +763,9 @@ f2 <-ggplot(ages.mean.random, aes(x = status, y = log(mean.phy +1), group = tree
   geom_point(size=3, shape=21, fill="white")+
   geom_line(alpha = 0.5)+
   facet_wrap(~extinction,
-             labeller = as_labeller(c(low = "Low",
-                                      intermediate = "Intermediate",
-                                      high = "High")))+
+             labeller = as_labeller(c(low = "Low extinction",
+                                      intermediate = "Intermediate extinction",
+                                      high = "High extinction")))+
   theme_bw()+
   ylab("log(Phylogenetic age + 1)")+
   xlab(NULL)+
@@ -798,9 +800,9 @@ f1 <-ggplot(ages.mean.random, aes(x = status, y = log(mean.true +1), group = tre
   geom_point(size=3, shape=21, fill="white")+
   geom_line(alpha = 0.5)+
   facet_wrap(~extinction,
-             labeller = as_labeller(c(low = "Low",
-                                      intermediate = "Intermediate",
-                                      high = "High")))+
+             labeller = as_labeller(c(low = "Low extinction",
+                                      intermediate = "Intermediate extinction",
+                                      high = "High extinction")))+
   theme_bw()+
   ylab("log(True age + 1)")+
   xlab(NULL)+
@@ -815,9 +817,9 @@ f2 <-ggplot(ages.mean.random, aes(x = status, y = log(mean.sto +1), group = tree
   geom_point(size=3, shape=21, fill="white")+
   geom_line(alpha = 0.5)+
   facet_wrap(~extinction,
-             labeller = as_labeller(c(low = "Low",
-                                      intermediate = "Intermediate",
-                                      high = "High")))+
+             labeller = as_labeller(c(low = "Low extinction",
+                                      intermediate = "Intermediate extinction",
+                                      high = "High extinction")))+
   theme_bw()+
   ylab("log(Highest probability age + 1)")+
   xlab(NULL)+
@@ -851,9 +853,9 @@ f1 <-ggplot(ages.mean.random, aes(x = status, y = log(mean.true +1), group = tre
   geom_point(size=3, shape=21, fill="white")+
   geom_line(alpha = 0.5)+
   facet_wrap(~extinction,
-             labeller = as_labeller(c(low = "Low",
-                                      intermediate = "Intermediate",
-                                      high = "High")))+
+             labeller = as_labeller(c(low = "Low extinction",
+                                      intermediate = "Intermediate extinction",
+                                      high = "High extinction")))+
   theme_bw()+
   ylab("log(True age + 1)")+
   xlab(NULL)+
@@ -868,9 +870,9 @@ f2 <-ggplot(ages.mean.random, aes(x = status, y = log(mean.mean +1), group = tre
   geom_point(size=3, shape=21, fill="white")+
   geom_line(alpha = 0.5)+
   facet_wrap(~extinction,
-             labeller = as_labeller(c(low = "Low",
-                                      intermediate = "Intermediate",
-                                      high = "High")))+
+             labeller = as_labeller(c(low = "Low extinction",
+                                      intermediate = "Intermediate extinction",
+                                      high = "High extinction")))+
   theme_bw()+
   ylab("log(Mean probable age + 1)")+
   xlab(NULL)+

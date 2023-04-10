@@ -164,6 +164,10 @@ clado.df.bud.0 <- read_csv(file = file.path(getwd(), pro, q_error,
 
 df.ext.levels <- rbind(clado.df.bud.09, clado.df.bud.05, clado.df.bud.0)
 
+###measuring accuracy
+df.ext.levels <- df.ext.levels %>% mutate(accuracy = rEstimated.age - rTrue.age)
+
+
 ##writing
 write_csv(df.ext.levels, file = file.path(getwd(), pro, q_error,
                                   "taxa.ext.lev.csv"))
@@ -177,7 +181,10 @@ df.ext.levels$mode <- rep("Budding", nrow(df.ext.levels))
 ##needed transformations
 df.ext.levels$extinction <- as.factor(df.ext.levels$extinction)
 
-df.ext.levels <- df.ext.levels %>% mutate(accuracy = rEstimated.age - rTrue.age)
+df.ext.levels$extinction <- factor(df.ext.levels$extinction, 
+                               levels = c("no_ext", "Intermediate", "High"))
+
+
 
 # Figures -----------------------------------------------------------------
 
@@ -202,7 +209,8 @@ age.ext$type <- factor(age.ext$type, levels = c("rTrue.age", "rEstimated.age"),
                        labels = c("rTrue.age", "rEstimated.age"))
 
 ##png object
-png("Figure3.facet.True.phylo.age.bud.png", width = 14, height = 15, units = "cm", 
+png("text/figures/Figure3.facet.True.phylo.age.bud.png",
+    width = 14, height = 15, units = "cm", 
     pointsize = 8, res = 300)
 
 f3 <- age.ext %>% 
@@ -238,7 +246,8 @@ dev.off()
  
 ######figure displaying a line and number of the accurate species
  ##png object
-png("Figure4.ratio.age.bud.png", width = 10, height = 15, units = "cm", 
+png("text/figures/Figure4.ratio.age.bud.png",
+    width = 10, height = 15, units = "cm", 
      pointsize = 8, res = 300)
  
 f4 <- df.ext.levels %>%
@@ -300,16 +309,21 @@ sp.comp <- left_join(sp.max.1, sp.min.1, by = "root.age") %>%
            pivot_longer(cols = c("est.ratio", "true.ratio"), names_to = "age",
                         values_to = "ratio")
 
+##saving for merging two figures (bifurcating and budding)
+write_csv(sp.comp, file = file.path(getwd(), pro, q_error, 
+                                    "sp.comp.bud.csv"))
+
 ####defining how many trees are qualitatively wrong 
 q.wrong <- sp.comp %>% group_by(extinction.x) %>% 
   filter(ratio < 0) %>% count() %>% 
   mutate(q_wrong = n/10)
 
 ##figure ratio of oldest and youngest species for the estimated age
-png("Figure5.old.vs.young.bud.png", width = 15, height = 15, units = "cm", 
+png("text/figures/Figure5.old.vs.young.bud.png",
+    width = 15, height = 15, units = "cm", 
     pointsize = 8, res = 300)
 
-old.vs.young <-ggplot(sp.comp, aes(x = ratio, fill = age))+ 
+old.vs.young.bud <-ggplot(sp.comp, aes(x = ratio, fill = age))+ 
                geom_histogram(alpha = 0.5, position = 'identity',
                        breaks = seq(-0.7, 1, by = 0.02))+
               geom_vline(xintercept = 0, color = "red")+
@@ -335,7 +349,7 @@ old.vs.young + mynamestheme
 dev.off()
 
 #############distribution between two random species############################
-sp.random <- df.ext.levels %>% select(species, mode,
+sp.random.bud <- df.ext.levels %>% select(species, mode,
                                    tree, root.age, rTrue.age, rEstimated.age,
                                    extinction) %>% 
                                 group_by(tree, extinction) %>% sample_n(2) %>%
@@ -347,7 +361,7 @@ sp.random <- df.ext.levels %>% select(species, mode,
                        values_to = "ratio")
                
 ####defining how many trees are qualitatively wrong 
-q.wrong.random <- sp.random %>% group_by(extinction) %>% 
+q.wrong.random.bud <- sp.random.bud %>% group_by(extinction) %>% 
   filter(ratio < 0) %>% count() %>% 
   mutate(q_wrong = n/10)                               
 
@@ -357,7 +371,7 @@ png("Figure5.old.vs.young.bud.random.png", width = 15, height = 15,
     units = "cm", 
     pointsize = 8, res = 300)
 
-old.vs.young.random <-ggplot(sp.random, aes(x = ratio, fill = age))+ 
+old.vs.young.random.bud <-ggplot(sp.random.bud, aes(x = ratio, fill = age))+ 
   geom_histogram(alpha = 0.5, position = 'identity',
                  breaks = seq(-0.7, 1, by = 0.02))+
   geom_vline(xintercept = 0, color = "red")+
