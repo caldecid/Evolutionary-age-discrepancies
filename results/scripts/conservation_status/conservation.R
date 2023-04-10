@@ -97,7 +97,7 @@ ages.int <- ages.int %>% mutate(rTrue.age = True.age/root.age,
                                 rPhylo.age = Estimated.age/root.age)
 
 ##extinction
-ages.int$extinction <- rep("intermediThe ate", nrow(ages.int))
+ages.int$extinction <- rep("intermediate", nrow(ages.int))
 
 ##species name
 ages.int$species <- paste0(ages.int$label,".", ages.int$tree)
@@ -270,6 +270,11 @@ write_csv(ages.total, file = file.path(getwd(), pro,
 ages.total <- read_csv(file = file.path(getwd(),
                                         pro, c_status, "ages.total.csv"))
 
+ages.total.join$status <- as.factor(ages.total.join$status)
+
+ages.total.join$status <- factor(ages.total.join$status,
+                                 levels = c("LC", "NT", "VU", "EN", "CR"))
+
 # Figures -----------------------------------------------------------------
 
 ## themes
@@ -286,12 +291,12 @@ mynamestheme <- theme(strip.text = element_text(family = "serif", size = (9)),
                                                   size=.5, linetype="dotted"),
                       legend.position = "bottom")
 
-########################Effect size
+#####True age vs Phylo age and Conservation status
 png("text/figures/Figure7.conservation_true.vs.phylo.png", width = 15, height = 15,
     units = "cm", 
     pointsize = 8, res = 300)
 
-p1 <- ggplot(ages.total, aes(x = status, y = log(True.age+1)))+
+p1 <- ggplot(ages.total.join, aes(x = status, y = log(True.age+1)))+
   geom_boxplot(outlier.shape  = NA)+
   geom_jitter(color="black", size=0.4, alpha = 0.1)+
   facet_wrap(~extinction, labeller = as_labeller(c(high = "High",
@@ -303,7 +308,7 @@ p1 <- ggplot(ages.total, aes(x = status, y = log(True.age+1)))+
   mynamestheme
   
 
-p2 <- ggplot(ages.total, aes(x = status, y = log(Estimated.age+1)))+
+p2 <- ggplot(ages.total.join, aes(x = status, y = log(Estimated.age+1)))+
   geom_boxplot(outlier.shape = NA)+
   geom_jitter(color="black", size=0.4, alpha=0.1)+
   facet_wrap(~extinction, labeller = as_labeller(c(high = "High",
@@ -315,7 +320,7 @@ p2 <- ggplot(ages.total, aes(x = status, y = log(Estimated.age+1)))+
   mynamestheme
 
 ##setting top
-top <- text_grob("Extinction background", family = "serif", size = 13,  face = "bold")
+top <- text_grob("Positive effect", family = "serif", size = 13,  face = "bold")
 
 ##grid for plotting both figures
 grid.arrange(p1, p2, nrow = 2, top = top)
@@ -323,12 +328,12 @@ grid.arrange(p1, p2, nrow = 2, top = top)
 dev.off()
 
 
-########################extinction background
+######True age vs Highest prob age and Conservation status
 png("text/figures/Figure8.conservation_true.vs.sto.png", width = 15, height = 15,
     units = "cm", 
     pointsize = 8, res = 300)
 
-p1 <- ggplot(ages.total, aes(x = status, y = log(True.age+1)))+
+p1 <- ggplot(ages.total.join, aes(x = status, y = log(True.age+1)))+
   geom_boxplot(outlier.shape  = NA)+
   geom_jitter(color="black", size=0.4, alpha = 0.1)+
   facet_wrap(~extinction, labeller = as_labeller(c(low = "Low",
@@ -340,7 +345,7 @@ p1 <- ggplot(ages.total, aes(x = status, y = log(True.age+1)))+
   mynamestheme
 
 
-p2 <- ggplot(ages.total, aes(x = status, y = log(max.prob.age + 1)))+
+p2 <- ggplot(ages.total.join, aes(x = status, y = log(max.prob.age + 1)))+
   geom_boxplot(outlier.shape = NA)+
   geom_jitter(color="black", size=0.4, alpha=0.1)+
   facet_wrap(~extinction, labeller = as_labeller(c(low = "Low",
@@ -352,7 +357,7 @@ p2 <- ggplot(ages.total, aes(x = status, y = log(max.prob.age + 1)))+
   mynamestheme
 
 ##setting top
-top <- text_grob("Extinction Background",
+top <- text_grob("Positive effect",
                  family = "serif", size = 13,  face = "bold")
 
 ##grid for plotting both figures
@@ -362,132 +367,536 @@ dev.off()
 
 
 
-ggplot(ages.total, aes(x = abs(log(True.age+1) - log(max.prob.age+1)), y = Probability))+
-  geom_point()
-
-# statistical models to evaluate variation --------------------------------
-
-##low level functions
-##true.age
-model.true <- function(df){
-  lm(log(True.age+1) ~ status, data = df)
-}
-
-##phylo age
-model.phylo <- function(df){
-  lm(log(Estimated.age+1) ~ status, data = df)
-}
-
-##stochastic age
-model.st <- function(df){
-  lm(log(max.prob.age+1) ~ status, data = df)
-}
-
-###nesting the models
-
-ages.models <- ages.total %>% group_by(tree, extinction) %>% 
-                nest() %>% 
-                mutate(model.tr = map(data, model.true),
-                       model.phy = map(data, model.phylo),
-                       model.sto = map(data, model.st))
-                    
-##glancing the models
-ages.m.glance <- ages.models %>% mutate(glance.tr = map(model.tr, broom::glance),
-                                  glance.phy = map(model.phy, broom::glance),
-                          glance.st = map(model.sto, broom::glance)) %>% 
-                 select(-c(model.tr, model.phy, model.sto))
-
-
-for(i in 1:nrow(ages.m.glance)){
-  ages.m.glance$beta.true[i] <- ages.models[[4]][[i]][["coefficients"]][2]
-  ages.m.glance$beta.phy[i] <- ages.models[[5]][[i]][["coefficients"]][2]
-  ages.m.glance$beta.sto[i] <- ages.models[[6]][[i]][["coefficients"]][2]
-  ages.m.glance$rsq.true[i] <- ages.m.glance[[4]][[i]]$r.squared
-  ages.m.glance$rsq.phy[i] <- ages.m.glance[[5]][[i]]$r.squared
-  ages.m.glance$rsq.sto[i] <- ages.m.glance[[6]][[i]]$r.squared
-  ages.m.glance$p.true[i] <- ages.m.glance[[4]][[i]]$p.value
-  ages.m.glance$p.phy[i] <- ages.m.glance[[5]][[i]]$p.value
-  ages.m.glance$p.sto[i] <- ages.m.glance[[6]][[i]]$p.value
-}
-
-###models parameters
-ages.parameters <- ages.m.glance %>% select(-starts_with("glance"), -data)
-
-
-# Beta parameter ----------------------------------------------------------
-beta.parameters <- ages.parameters %>% pivot_longer(cols = starts_with("beta"),
-                                                    names_to = "model",
-                              values_to = "beta", names_prefix = "beta") %>%
-                              mutate(model = as.factor(model))
-
-beta.parameters$model <- factor(beta.parameters$model,
-                                   levels=c(".true", ".phy", ".sto"))
-
-
-###PNG object
-png("text/figures/Figure11.Betas.png", width = 15, height = 17,
+######True age vs Mean prob age and Conservation status
+png("text/figures/Figure8.1.conservation.true.vs.mean.sto.png", 
+    width = 15, height = 15,
     units = "cm", 
     pointsize = 8, res = 300)
 
-
-##low effect size
-beta.parameters %>%
-      ggplot(aes(x = beta, fill = model)) + 
-     xlim(0,5)+
-     geom_density(alpha = 0.4)+
-     scale_fill_manual(values = c("#1b9e77", "#d95f02", "#7570b3"),
-                            
-                    breaks = c('.true', '.phy', ".sto"),
-                    labels=c('True','Phylogenetic', 'Stochastic'))+
-     facet_grid(~extinction, labeller = as_labeller(c(high = "High",
-                                               intermediate = "Intermediate",
-                                               low = "Low")))+
-     ylab(NULL)+
-     xlab("Beta")+
-     theme_bw()+
-     xlim(0,1)+
-     labs(fill = "Model")+
-    ggtitle("Extinction background")+
-     mynamestheme
-
-dev.off()
-
-# R-squared ---------------------------------------------------------------
-
-rsq.parameters <- ages.parameters %>% 
-                   pivot_longer(cols = starts_with("rsq"), names_to = "model",
-                                      values_to = "rsq", names_prefix = "rsq")
-  
-rsq.parameters$model <- as.factor(rsq.parameters$model)
-
-rsq.parameters$model <- factor(rsq.parameters$model,
-                                levels=c(".true", ".phy", ".sto"))
-
-###PNG object
-png("text/figures/Figure12.RSQ.png", width = 15, height = 17,
-    units = "cm", 
-    pointsize = 8, res = 300)
-
-
-rsq.parameters %>%
-      ggplot(aes(x = rsq, fill = model)) + 
-  #xlim(0,5)+
-    geom_density(alpha = 0.5)+
-    scale_fill_manual(values = c("#1b9e77", "#d95f02", "#7570b3"),
-                    breaks = c('.true','.phy', ".sto"),
-                    labels=c('True', 'Phylogenetic', 'Stochastic'))+
-    facet_grid(~extinction, labeller = as_labeller(c(high = "High",
-                                               intermediate = "Intermediate",
-                                               low = "Low")))+
-  ylab(NULL)+
-  xlab("R-squared")+
+p1 <- ggplot(ages.total.join, aes(x = status, y = log(True.age+1)))+
+  geom_boxplot(outlier.shape  = NA)+
+  geom_jitter(color="black", size=0.4, alpha = 0.1)+
+  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low",
+                                                   intermediate = "Intermediate",
+                                                   high = "High")))+
+  ylab("log(True age + 1)")+
+  xlab(NULL)+
   theme_bw()+
-  labs(fill = "Model")+
-  ggtitle("Extinction background")+
   mynamestheme
 
 
+p2 <- ggplot(ages.total.join, aes(x = status, y = log(mean.age + 1)))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_jitter(color="black", size=0.4, alpha=0.1)+
+  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low",
+                                                   intermediate = "Intermediate",
+                                                   high = "High")))+
+  ylab("log(Mean probable age + 1)")+
+  xlab("Conservation status")+
+  theme_bw()+
+  mynamestheme
+
+##setting top
+top <- text_grob("Positive effect",
+                 family = "serif", size = 13,  face = "bold")
+
+##grid for plotting both figures
+grid.arrange(p1, p2, nrow = 2, top = top)
+
 dev.off()
+
+##########################No effects################################
+
+##randomize rows and then assign the status
+
+##extracting the status column 
+status <- ages.total.join$status
+
+##removing the status column from the dataframe and shuffling the rows
+ages.total.join.random <- ages.total.join %>% select(-status) %>% sample_frac()
+ 
+##joining the status column                          
+ages.total.join.random$status <- status
+
+########Figures
+
+#####True age vs Phylo age and Conservation status
+png("text/figures/Figure9.conservation_true.vs.phylo.no.effects.png", 
+    width = 15, height = 15,
+    units = "cm", 
+    pointsize = 8, res = 300)
+
+p1 <- ggplot(ages.total.join.random, aes(x = status, y = log(True.age+1)))+
+  geom_boxplot(outlier.shape  = NA)+
+  geom_jitter(color="black", size=0.4, alpha = 0.1)+
+  facet_wrap(~extinction, labeller = as_labeller(c(high = "High",
+                                                   intermediate = "Intermediate",
+                                                   low = "Low")))+
+  ylab("log(True age + 1)")+
+  xlab(NULL)+
+  theme_bw()+
+  mynamestheme
+
+
+p2 <- ggplot(ages.total.join.random, aes(x = status, y = log(Estimated.age+1)))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_jitter(color="black", size=0.4, alpha=0.1)+
+  facet_wrap(~extinction, labeller = as_labeller(c(high = "High",
+                                                   intermediate = "Intermediate",
+                                                   low = "Low")))+
+  ylab("log(Phylogenetic age + 1)")+
+  xlab("Conservation status")+
+  theme_bw()+
+  mynamestheme
+
+##setting top
+top <- text_grob("No effect", family = "serif", 
+                 size = 13,  face = "bold")
+
+##grid for plotting both figures
+grid.arrange(p1, p2, nrow = 2, top = top)
+
+dev.off()
+
+
+######True age vs Highest prob age and Conservation status
+png("text/figures/Figure9.1.conservation_true.vs.sto.no.effect.png",
+    width = 15, height = 15,
+    units = "cm", 
+    pointsize = 8, res = 300)
+
+p1 <- ggplot(ages.total.join.random, aes(x = status, y = log(True.age+1)))+
+  geom_boxplot(outlier.shape  = NA)+
+  geom_jitter(color="black", size=0.4, alpha = 0.1)+
+  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low",
+                                                   intermediate = "Intermediate",
+                                                   high = "High")))+
+  ylab("log(True age + 1)")+
+  xlab(NULL)+
+  theme_bw()+
+  mynamestheme
+
+
+p2 <- ggplot(ages.total.join.random, aes(x = status, y = log(max.prob.age + 1)))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_jitter(color="black", size=0.4, alpha=0.1)+
+  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low",
+                                                   intermediate = "Intermediate",
+                                                   high = "High")))+
+  ylab("log(Highest probable age + 1)")+
+  xlab("Conservation status")+
+  theme_bw()+
+  mynamestheme
+
+##setting top
+top <- text_grob("No effect",
+                 family = "serif", size = 13,  face = "bold")
+
+##grid for plotting both figures
+grid.arrange(p1, p2, nrow = 2, top = top)
+
+dev.off()
+
+
+
+######True age vs Mean prob age and Conservation status
+png("text/figures/Figure9.2.conservation.true.vs.mean.sto.no.effect.png", 
+    width = 15, height = 15,
+    units = "cm", 
+    pointsize = 8, res = 300)
+
+p1 <- ggplot(ages.total.join.random, aes(x = status, y = log(True.age+1)))+
+  geom_boxplot(outlier.shape  = NA)+
+  geom_jitter(color="black", size=0.4, alpha = 0.1)+
+  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low",
+                                                   intermediate = "Intermediate",
+                                                   high = "High")))+
+  ylab("log(True age + 1)")+
+  xlab(NULL)+
+  theme_bw()+
+  mynamestheme
+
+
+p2 <- ggplot(ages.total.join.random, aes(x = status, y = log(mean.age + 1)))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_jitter(color="black", size=0.4, alpha=0.1)+
+  facet_wrap(~extinction, labeller = as_labeller(c(low = "Low",
+                                                   intermediate = "Intermediate",
+                                                   high = "High")))+
+  ylab("log(Mean probable age + 1)")+
+  xlab("Conservation status")+
+  theme_bw()+
+  mynamestheme
+
+##setting top
+top <- text_grob("No effect",
+                 family = "serif", size = 13,  face = "bold")
+
+##grid for plotting both figures
+grid.arrange(p1, p2, nrow = 2, top = top)
+
+dev.off()
+
+##########line plots##########################################################
+
+##Calculating the mean of each age for each tree and extinction background
+ages.mean <-ages.total.join %>% 
+                 group_by(extinction, tree, status) %>%
+                 summarise(mean.true = mean(True.age),
+                           mean.phy = mean(Estimated.age),
+                           mean.sto = mean(max.prob.age),
+                           mean.mean = mean(mean.age)) 
+
+##renaming tree for grouping
+ages.mean$tree <- paste0(ages.mean$tree, ".", 
+                              ages.mean$extinction)
+
+
+png("text/figures/Figure10.line.true.vs.phy.png", 
+    width = 15, height = 15,
+    units = "cm", 
+    pointsize = 8, res = 300)
+
+
+##mean true age
+f1 <-ggplot(ages.mean, aes(x = status, y = log(mean.true +1), group = tree,
+                           color = extinction))+
+  scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
+  geom_point(size=3, shape=21, fill="white")+
+  geom_line(alpha = 0.5)+
+  facet_wrap(~extinction,
+             labeller = as_labeller(c(low = "Low",
+                                    intermediate = "Intermediate",
+                                             high = "High")))+
+  theme_bw()+
+  ylab("log(True age + 1)")+
+  xlab(NULL)+
+  theme(legend.position = "none")+
+  mynamestheme
+
+
+##mean phylo age
+f2 <-ggplot(ages.mean, aes(x = status, y = log(mean.phy +1), group = tree,
+                           colour = extinction))+
+  scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
+  geom_point(size=3, shape=21, fill="white")+
+  geom_line(alpha = 0.5)+
+  facet_wrap(~extinction,
+             labeller = as_labeller(c(low = "Low",
+                                        intermediate = "Intermediate",
+                                        high = "High")))+
+  theme_bw()+
+  ylab("log(Phylogenetic age + 1)")+
+  xlab(NULL)+
+  theme(legend.position = "none")+
+  mynamestheme
+
+##setting top
+top <- text_grob("Positive effect",
+                 family = "serif", size = 13,  face = "bold")
+
+##bottom
+bottom <- text_grob("Conservation status",
+                    family = "serif", size = 13,  face = "bold")
+
+##grid for plotting both figures
+grid.arrange(f1, f2, nrow = 2, top = top, bottom= bottom)
+
+dev.off()
+
+
+##############highest probabiltiy age
+png("text/figures/Figure10.1.line.true.vs.high.prob.png", 
+    width = 15, height = 15,
+    units = "cm", 
+    pointsize = 8, res = 300)
+
+
+##mean true age
+f1 <-ggplot(ages.mean, aes(x = status, y = log(mean.true +1), group = tree,
+                           color = extinction))+
+  scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
+  geom_point(size=3, shape=21, fill="white")+
+  geom_line(alpha = 0.5)+
+  facet_wrap(~extinction,
+             labeller = as_labeller(c(low = "Low",
+                                      intermediate = "Intermediate",
+                                      high = "High")))+
+  theme_bw()+
+  ylab("log(True age + 1)")+
+  xlab(NULL)+
+  theme(legend.position = "none")+
+  mynamestheme
+
+
+##mean phylo age
+f2 <-ggplot(ages.mean, aes(x = status, y = log(mean.sto +1), group = tree,
+                           colour = extinction))+
+  scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
+  geom_point(size=3, shape=21, fill="white")+
+  geom_line(alpha = 0.5)+
+  facet_wrap(~extinction,
+             labeller = as_labeller(c(low = "Low",
+                                      intermediate = "Intermediate",
+                                      high = "High")))+
+  theme_bw()+
+  ylab("log(Highest probability age + 1)")+
+  xlab(NULL)+
+  theme(legend.position = "none")+
+  mynamestheme
+
+##setting top
+top <- text_grob("Positive effect",
+                 family = "serif", size = 13,  face = "bold")
+
+##bottom
+bottom <- text_grob("Conservation status",
+                    family = "serif", size = 13,  face = "bold")
+
+##grid for plotting both figures
+grid.arrange(f1, f2, nrow = 2, top = top, bottom= bottom)
+
+dev.off()
+
+#########mean probability age
+png("text/figures/Figure10.2.line.true.vs.mean.sto.png", 
+    width = 15, height = 15,
+    units = "cm", 
+    pointsize = 8, res = 300)
+
+
+##mean true age
+f1 <-ggplot(ages.mean, aes(x = status, y = log(mean.true +1), group = tree,
+                           color = extinction))+
+  scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
+  geom_point(size=3, shape=21, fill="white")+
+  geom_line(alpha = 0.5)+
+  facet_wrap(~extinction,
+             labeller = as_labeller(c(low = "Low",
+                                      intermediate = "Intermediate",
+                                      high = "High")))+
+  theme_bw()+
+  ylab("log(True age + 1)")+
+  xlab(NULL)+
+  theme(legend.position = "none")+
+  mynamestheme
+
+
+##mean phylo age
+f2 <-ggplot(ages.mean, aes(x = status, y = log(mean.mean +1), group = tree,
+                           colour = extinction))+
+  scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
+  geom_point(size=3, shape=21, fill="white")+
+  geom_line(alpha = 0.5)+
+  facet_wrap(~extinction,
+             labeller = as_labeller(c(low = "Low",
+                                      intermediate = "Intermediate",
+                                      high = "High")))+
+  theme_bw()+
+  ylab("log(Mean probable age + 1)")+
+  xlab(NULL)+
+  theme(legend.position = "none")+
+  mynamestheme
+
+##setting top
+top <- text_grob("Positive effect",
+                 family = "serif", size = 13,  face = "bold")
+
+##bottom
+bottom <- text_grob("Conservation status",
+                    family = "serif", size = 13,  face = "bold")
+
+##grid for plotting both figures
+grid.arrange(f1, f2, nrow = 2, top = top, bottom= bottom)
+
+dev.off()
+
+
+
+
+#####################line plots no effect#################################
+
+##Calculating the mean of each age for each tree and extinction background
+ages.mean.random <-ages.total.join.random %>% 
+                                  group_by(extinction, tree, status) %>%
+                                  summarise(mean.true = mean(True.age),
+                                  mean.phy = mean(Estimated.age),
+                                  mean.sto = mean(max.prob.age),
+                                  mean.mean = mean(mean.age)) 
+
+##renaming tree for grouping
+ages.mean.random$tree <- paste0(ages.mean.random$tree, ".", 
+                         ages.mean.random$extinction)
+
+
+
+###mean true age
+png("text/figures/Figure11.line.true.vs.phy.no.effect.png", 
+    width = 15, height = 15,
+    units = "cm", 
+    pointsize = 8, res = 300)
+
+
+##mean true age
+f1 <-ggplot(ages.mean.random, aes(x = status, y = log(mean.true +1), group = tree,
+                           color = extinction))+
+  scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
+  geom_point(size=3, shape=21, fill="white")+
+  geom_line(alpha = 0.5)+
+  facet_wrap(~extinction,
+             labeller = as_labeller(c(low = "Low",
+                                      intermediate = "Intermediate",
+                                      high = "High")))+
+  theme_bw()+
+  ylab("log(True age + 1)")+
+  xlab(NULL)+
+  theme(legend.position = "none")+
+  mynamestheme
+
+
+##mean phylo age
+f2 <-ggplot(ages.mean.random, aes(x = status, y = log(mean.phy +1), group = tree,
+                           colour = extinction))+
+  scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
+  geom_point(size=3, shape=21, fill="white")+
+  geom_line(alpha = 0.5)+
+  facet_wrap(~extinction,
+             labeller = as_labeller(c(low = "Low",
+                                      intermediate = "Intermediate",
+                                      high = "High")))+
+  theme_bw()+
+  ylab("log(Phylogenetic age + 1)")+
+  xlab(NULL)+
+  theme(legend.position = "none")+
+  mynamestheme
+
+##setting top
+top <- text_grob("No effect",
+                 family = "serif", size = 13,  face = "bold")
+
+##bottom
+bottom <- text_grob("Conservation status",
+                    family = "serif", size = 13,  face = "bold")
+
+##grid for plotting both figures
+grid.arrange(f1, f2, nrow = 2, top = top, bottom= bottom)
+
+dev.off()
+
+
+##############highest probabiltiy age
+png("text/figures/Figure11.1.line.true.vs.high.prob.no.effect.png", 
+    width = 15, height = 15,
+    units = "cm", 
+    pointsize = 8, res = 300)
+
+
+##mean true age
+f1 <-ggplot(ages.mean.random, aes(x = status, y = log(mean.true +1), group = tree,
+                           color = extinction))+
+  scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
+  geom_point(size=3, shape=21, fill="white")+
+  geom_line(alpha = 0.5)+
+  facet_wrap(~extinction,
+             labeller = as_labeller(c(low = "Low",
+                                      intermediate = "Intermediate",
+                                      high = "High")))+
+  theme_bw()+
+  ylab("log(True age + 1)")+
+  xlab(NULL)+
+  theme(legend.position = "none")+
+  mynamestheme
+
+
+##mean phylo age
+f2 <-ggplot(ages.mean.random, aes(x = status, y = log(mean.sto +1), group = tree,
+                           colour = extinction))+
+  scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
+  geom_point(size=3, shape=21, fill="white")+
+  geom_line(alpha = 0.5)+
+  facet_wrap(~extinction,
+             labeller = as_labeller(c(low = "Low",
+                                      intermediate = "Intermediate",
+                                      high = "High")))+
+  theme_bw()+
+  ylab("log(Highest probability age + 1)")+
+  xlab(NULL)+
+  theme(legend.position = "none")+
+  mynamestheme
+
+##setting top
+top <- text_grob("No effect",
+                 family = "serif", size = 13,  face = "bold")
+
+##bottom
+bottom <- text_grob("Conservation status",
+                    family = "serif", size = 13,  face = "bold")
+
+##grid for plotting both figures
+grid.arrange(f1, f2, nrow = 2, top = top, bottom= bottom)
+
+dev.off()
+
+#########mean probability age
+png("text/figures/Figure11.2.line.true.vs.mean.sto.no.effect.png", 
+    width = 15, height = 15,
+    units = "cm", 
+    pointsize = 8, res = 300)
+
+
+##mean true age
+f1 <-ggplot(ages.mean.random, aes(x = status, y = log(mean.true +1), group = tree,
+                           color = extinction))+
+  scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
+  geom_point(size=3, shape=21, fill="white")+
+  geom_line(alpha = 0.5)+
+  facet_wrap(~extinction,
+             labeller = as_labeller(c(low = "Low",
+                                      intermediate = "Intermediate",
+                                      high = "High")))+
+  theme_bw()+
+  ylab("log(True age + 1)")+
+  xlab(NULL)+
+  theme(legend.position = "none")+
+  mynamestheme
+
+
+##mean phylo age
+f2 <-ggplot(ages.mean.random, aes(x = status, y = log(mean.mean +1), group = tree,
+                           colour = extinction))+
+  scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
+  geom_point(size=3, shape=21, fill="white")+
+  geom_line(alpha = 0.5)+
+  facet_wrap(~extinction,
+             labeller = as_labeller(c(low = "Low",
+                                      intermediate = "Intermediate",
+                                      high = "High")))+
+  theme_bw()+
+  ylab("log(Mean probable age + 1)")+
+  xlab(NULL)+
+  theme(legend.position = "none")+
+  mynamestheme
+
+##setting top
+top <- text_grob("No effect",
+                 family = "serif", size = 13,  face = "bold")
+
+##bottom
+bottom <- text_grob("Conservation status",
+                    family = "serif", size = 13,  face = "bold")
+
+##grid for plotting both figures
+grid.arrange(f1, f2, nrow = 2, top = top, bottom= bottom)
+
+dev.off()
+
+
+
+
+
+
+
+
 
 
 
