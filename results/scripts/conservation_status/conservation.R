@@ -129,83 +129,74 @@ ages.low$extinction <- rep("low", nrow(ages.low))
 ages.low$species <- paste0(ages.low$label,".", ages.low$tree)
 
 
-# stochastic function -----------------------------------------------------
+# geometric function -----------------------------------------------------
 
-##future package conditions 
-plan("multisession", workers = 3)
 
 ##high extinction
-ages.stochastic.high <- future_lapply(trees.extant.high,
-                                               stochastic.sp.age.torsten)
+ages.geometric.high <- lapply(trees.extant.high, getGeometricAges)
 
 ##intermediate extinction
-ages.stochastic.int <- future_lapply(trees.extant.int,
-                                               stochastic.sp.age.torsten)
+ages.geometric.int <- lapply(trees.extant.int, getGeometricAges)
 
 ##low extinction
-ages.stochastic.low <- future_lapply(trees.extant.low,
-                                     stochastic.sp.age.torsten)
+ages.geometric.low <- lapply(trees.extant.low, getGeometricAges)
 
 
-#####organizing stochastic results############
+#####organizing geometric results############
 
 ##assigning tree number and root age
-for(i in seq_along(ages.stochastic.high)){
-  ages.stochastic.high[[i]]$tree <- rep(paste0("tree.", i),
-                                        nrow(ages.stochastic.high[[i]]))
-  ages.stochastic.high[[i]]$root.age <The - rep(root.high[i],
-                                            nrow(ages.stochastic.high[[i]]))
+for(i in seq_along(ages.geometric.high)){
+  ages.geometric.high[[i]]$tree <- rep(paste0("tree.", i),
+                                        nrow(ages.geometric.high[[i]]))
+  ages.geometric.high[[i]]$species <- rownames(ages.geometric.high[[i]])
+  ages.geometric.high[[i]]$root.age <- rep(root.high[i],
+                                            nrow(ages.geometric.high[[i]]))
 }
 
 ##unlist
-ages.high.st <- do.call("rbind", ages.stochastic.high) 
+ages.high.st <- do.call("rbind", ages.geometric.high) 
 
 ages.high.st$species <- paste0(ages.high.st$species,".", ages.high.st$tree)
 
 ages.high.st$extinction <- rep("high", nrow(ages.high.st))
 
-ages.high.st <- ages.high.st %>% unnest(dist_ages) %>% 
-  filter(Probability == max(Probability)) %>% 
-  rename(max.prob.age = Age)
-
-ages.high.st$max.prob.age <- as.numeric(as.character(ages.high.st$max.prob.age))
-
-ages.high.st <- ages.high.st %>% mutate(rStochastic = max.prob.age/root.age)
+##calculation scaled ages
+ages.high.st <- ages.high.st %>% mutate(rmode = modal/root.age,
+                                        rmean = mean/root.age)
 
 ######intermediate extinction
 
 ##assigning tree number and root age
-for(i in seq_along(ages.stochastic.intThe )){
-  ages.stochastic.int[[i]]$tree <- rep(paste0("tree.", i),
-                                         nrow(ages.stochastic.int[[i]]))
-  ages.stochastic.int[[i]]$root.age <- rep(root.int[i],
-                                             nrow(ages.stochastic.int[[i]]))
+for(i in seq_along(ages.geometric.int)){
+  ages.geometric.int[[i]]$tree <- rep(paste0("tree.", i),
+                                         nrow(ages.geometric.int[[i]]))
+  ages.geometric.int[[i]]$species <- rownames(ages.geometric.int[[i]])
+  ages.geometric.int[[i]]$root.age <- rep(root.int[i],
+                                             nrow(ages.geometric.int[[i]]))
   
 }
 
 ##unlist
-ages.int.st <- do.call("rbind", ages.stochastic.int) 
+ages.int.st <- do.call("rbind", ages.geometric.int) 
 
 ages.int.st$species <- paste0(ages.int.st$species,".", ages.int.st$tree)
 
 ages.int.st$extinction <- rep("intermediate", nrow(ages.int.st))
 
-ages.int.st <- ages.int.st %>% unnest(dist_ages) %>% 
-  filter(Probability == max(Probability)) %>% 
-  rename(max.prob.age = Age)
 
-ages.int.st$max.prob.age <- as.numeric(as.character(ages.int.st$max.prob.age))
-
-ages.int.st <- ages.int.st %>% mutate(rStochastic = max.prob.age/root.age)
+##scaled ages
+ages.int.st <- ages.int.st %>% mutate(rmode = modal/root.age,
+                                      rmean = mean/root.age)
 
 #####low extinction
 
 ##assigning tree number and root age
-for(i in seq_along(ages.stochastic.low)){
-  ages.stochastic.low[[i]]$tree <- rep(paste0("tree.", i),
-                                         nrow(ages.stochastic.low[[i]]))
-  ages.stochastic.low[[i]]$root.age <- rep(root.low[i],
-                                             nrow(ages.stochastic.low[[i]]))
+for(i in seq_along(ages.geometric.low)){
+  ages.geometric.low[[i]]$tree <- rep(paste0("tree.", i),
+                                         nrow(ages.geometric.low[[i]]))
+  ages.geometric.low[[i]]$species <- rownames(ages.geometric.low[[i]])
+  ages.geometric.low[[i]]$root.age <- rep(root.low[i],
+                                             nrow(ages.geometric.low[[i]]))
   
  
   
@@ -213,19 +204,14 @@ for(i in seq_along(ages.stochastic.low)){
 
 
 ##unlist
-ages.low.st <- do.call("rbind", ages.stochastic.low) 
+ages.low.st <- do.call("rbind", ages.geometric.low) 
 
 ages.low.st$species <- paste0(ages.low.st$species,".", ages.low.st$tree)
 
 ages.low.st$extinction <- rep("low", nrow(ages.low.st))
 
-ages.low.st <- ages.low.st %>% unnest(dist_ages) %>% 
-  filter(Probability == max(Probability)) %>% 
-  rename(max.prob.age = Age) 
-
-ages.low.st$max.prob.age <- as.numeric(as.character(ages.low.st$max.prob.age))
-
-ages.low.st <- ages.low.st %>% mutate(rStochastic = max.prob.age/root.age)
+ages.low.st <- ages.low.st %>% mutate(rmode = modal/root.age,
+                                      rmean = mean/root.age)
 
 
 # simulating the extinction signal -----------------------------------------
@@ -270,10 +256,15 @@ write_csv(ages.total, file = file.path(getwd(), pro,
 ages.total <- read_csv(file = file.path(getwd(),
                                         pro, c_status, "ages.total.csv"))
 
-ages.total.join$status <- as.factor(ages.total.join$status)
+ages.total$status <- as.factor(ages.total$status)
 
-ages.total.join$status <- factor(ages.total.join$status,
+ages.total$status <- factor(ages.total$status,
                                  levels = c("LC", "NT", "VU", "EN", "CR"))
+
+ages.total$extinction <- as.factor(ages.total$extinction)
+
+ages.total$extinction <- factor(ages.total$extinction,
+                                levels = c("low", "intermediate", "high"))
 
 # Figures -----------------------------------------------------------------
 
@@ -296,7 +287,7 @@ png("text/figures/Figure7.conservation_true.vs.phylo.png", width = 15, height = 
     units = "cm", 
     pointsize = 8, res = 300)
 
-p1 <- ggplot(ages.total.join, aes(x = status, y = log(True.age+1)))+
+p1 <- ggplot(ages.total, aes(x = status, y = log(True.age+1)))+
   geom_boxplot(outlier.shape  = NA)+
   geom_jitter(color="black", size=0.4, alpha = 0.1)+
   facet_wrap(~extinction, labeller = as_labeller(c(high = "High extinction",
@@ -308,7 +299,7 @@ p1 <- ggplot(ages.total.join, aes(x = status, y = log(True.age+1)))+
   mynamestheme
   
 
-p2 <- ggplot(ages.total.join, aes(x = status, y = log(Estimated.age+1)))+
+p2 <- ggplot(ages.total, aes(x = status, y = log(Estimated.age+1)))+
   geom_boxplot(outlier.shape = NA)+
   geom_jitter(color="black", size=0.4, alpha=0.1)+
   facet_wrap(~extinction, labeller = as_labeller(c(high = "High extinction",
@@ -329,11 +320,11 @@ dev.off()
 
 
 ######True age vs Highest prob age and Conservation status
-png("text/figures/Figure8.conservation_true.vs.sto.png", width = 15, height = 15,
+png("text/figures/Figure8.conservation_true.vs.mode.png", width = 15, height = 15,
     units = "cm", 
     pointsize = 8, res = 300)
 
-p1 <- ggplot(ages.total.join, aes(x = status, y = log(True.age+1)))+
+p1 <- ggplot(ages.total, aes(x = status, y = log(True.age+1)))+
   geom_boxplot(outlier.shape  = NA)+
   geom_jitter(color="black", size=0.4, alpha = 0.1)+
   facet_wrap(~extinction, labeller = as_labeller(c(low = "Low extinction",
@@ -345,13 +336,13 @@ p1 <- ggplot(ages.total.join, aes(x = status, y = log(True.age+1)))+
   mynamestheme
 
 
-p2 <- ggplot(ages.total.join, aes(x = status, y = log(max.prob.age + 1)))+
+p2 <- ggplot(ages.total, aes(x = status, y = log(modal + 1)))+
   geom_boxplot(outlier.shape = NA)+
   geom_jitter(color="black", size=0.4, alpha=0.1)+
   facet_wrap(~extinction, labeller = as_labeller(c(low = "Low extinction",
                                       intermediate = "Intermediate extinction",
                                       high = "High extinction")))+
-  ylab("log(Highest probable age + 1)")+
+  ylab("log(Most probable age + 1)")+
   xlab("Conservation status")+
   theme_bw()+
   mynamestheme
@@ -368,12 +359,12 @@ dev.off()
 
 
 ######True age vs Mean prob age and Conservation status
-png("text/figures/Figure8.1.conservation.true.vs.mean.sto.png", 
+png("text/figures/Figure8.1.conservation.true.vs.mean.png", 
     width = 15, height = 15,
     units = "cm", 
     pointsize = 8, res = 300)
 
-p1 <- ggplot(ages.total.join, aes(x = status, y = log(True.age+1)))+
+p1 <- ggplot(ages.total, aes(x = status, y = log(True.age+1)))+
   geom_boxplot(outlier.shape  = NA)+
   geom_jitter(color="black", size=0.4, alpha = 0.1)+
   facet_wrap(~extinction, labeller = as_labeller(c(low = "Low extinction",
@@ -385,7 +376,7 @@ p1 <- ggplot(ages.total.join, aes(x = status, y = log(True.age+1)))+
   mynamestheme
 
 
-p2 <- ggplot(ages.total.join, aes(x = status, y = log(mean.age + 1)))+
+p2 <- ggplot(ages.total, aes(x = status, y = log(mean+ 1)))+
   geom_boxplot(outlier.shape = NA)+
   geom_jitter(color="black", size=0.4, alpha=0.1)+
   facet_wrap(~extinction, labeller = as_labeller(c(low = "Low extinction",
@@ -410,13 +401,13 @@ dev.off()
 ##randomize rows and then assign the status
 
 ##extracting the status column 
-status <- ages.total.join$status
+status <- ages.total$status
 
 ##removing the status column from the dataframe and shuffling the rows
-ages.total.join.random <- ages.total.join %>% select(-status) %>% sample_frac()
+ages.total.random <- ages.total %>% select(-status) %>% sample_frac()
  
 ##joining the status column                          
-ages.total.join.random$status <- status
+ages.total.random$status <- status
 
 ########Figures
 
@@ -426,7 +417,7 @@ png("text/figures/Figure9.conservation_true.vs.phylo.no.effects.png",
     units = "cm", 
     pointsize = 8, res = 300)
 
-p1 <- ggplot(ages.total.join.random, aes(x = status, y = log(True.age+1)))+
+p1 <- ggplot(ages.total.random, aes(x = status, y = log(True.age+1)))+
   geom_boxplot(outlier.shape  = NA)+
   geom_jitter(color="black", size=0.4, alpha = 0.1)+
   facet_wrap(~extinction, labeller = as_labeller(c(high = "High extinction",
@@ -438,7 +429,7 @@ p1 <- ggplot(ages.total.join.random, aes(x = status, y = log(True.age+1)))+
   mynamestheme
 
 
-p2 <- ggplot(ages.total.join.random, aes(x = status, y = log(Estimated.age+1)))+
+p2 <- ggplot(ages.total.random, aes(x = status, y = log(Estimated.age+1)))+
   geom_boxplot(outlier.shape = NA)+
   geom_jitter(color="black", size=0.4, alpha=0.1)+
   facet_wrap(~extinction, labeller = as_labeller(c(high = "High extinction",
@@ -460,12 +451,12 @@ dev.off()
 
 
 ######True age vs Highest prob age and Conservation status
-png("text/figures/Figure9.1.conservation_true.vs.sto.no.effect.png",
+png("text/figures/Figure9.1.conservation_true.vs.mode.no.effect.png",
     width = 15, height = 15,
     units = "cm", 
     pointsize = 8, res = 300)
 
-p1 <- ggplot(ages.total.join.random, aes(x = status, y = log(True.age+1)))+
+p1 <- ggplot(ages.total.random, aes(x = status, y = log(True.age+1)))+
   geom_boxplot(outlier.shape  = NA)+
   geom_jitter(color="black", size=0.4, alpha = 0.1)+
   facet_wrap(~extinction, labeller = as_labeller(c(low = "Low extinction",
@@ -477,13 +468,13 @@ p1 <- ggplot(ages.total.join.random, aes(x = status, y = log(True.age+1)))+
   mynamestheme
 
 
-p2 <- ggplot(ages.total.join.random, aes(x = status, y = log(max.prob.age + 1)))+
+p2 <- ggplot(ages.total.random, aes(x = status, y = log(modal + 1)))+
   geom_boxplot(outlier.shape = NA)+
   geom_jitter(color="black", size=0.4, alpha=0.1)+
   facet_wrap(~extinction, labeller = as_labeller(c(low = "Low extinction",
                                        intermediate = "Intermediate extinction",
                                        high = "High extinction")))+
-  ylab("log(Highest probable age + 1)")+
+  ylab("log(Most probable age + 1)")+
   xlab("Conservation status")+
   theme_bw()+
   mynamestheme
@@ -500,12 +491,12 @@ dev.off()
 
 
 ######True age vs Mean prob age and Conservation status
-png("text/figures/Figure9.2.conservation.true.vs.mean.sto.no.effect.png", 
+png("text/figures/Figure9.2.conservation.true.vs.mean.no.effect.png", 
     width = 15, height = 15,
     units = "cm", 
     pointsize = 8, res = 300)
 
-p1 <- ggplot(ages.total.join.random, aes(x = status, y = log(True.age+1)))+
+p1 <- ggplot(ages.total.random, aes(x = status, y = log(True.age+1)))+
   geom_boxplot(outlier.shape  = NA)+
   geom_jitter(color="black", size=0.4, alpha = 0.1)+
   facet_wrap(~extinction, labeller = as_labeller(c(low = "Low extinction",
@@ -517,7 +508,7 @@ p1 <- ggplot(ages.total.join.random, aes(x = status, y = log(True.age+1)))+
   mynamestheme
 
 
-p2 <- ggplot(ages.total.join.random, aes(x = status, y = log(mean.age + 1)))+
+p2 <- ggplot(ages.total.random, aes(x = status, y = log(mean + 1)))+
   geom_boxplot(outlier.shape = NA)+
   geom_jitter(color="black", size=0.4, alpha=0.1)+
   facet_wrap(~extinction, labeller = as_labeller(c(low = "Low extinction",
@@ -540,12 +531,12 @@ dev.off()
 ##########line plots##########################################################
 
 ##Calculating the mean of each age for each tree and extinction background
-ages.mean <-ages.total.join %>% 
+ages.mean <-ages.total%>% 
                  group_by(extinction, tree, status) %>%
                  summarise(mean.true = mean(True.age),
                            mean.phy = mean(Estimated.age),
-                           mean.sto = mean(max.prob.age),
-                           mean.mean = mean(mean.age)) 
+                           mean.mode = mean(modal),
+                           mean.mean = mean(mean)) 
 
 ##renaming tree for grouping
 ages.mean$tree <- paste0(ages.mean$tree, ".", 
@@ -608,7 +599,7 @@ dev.off()
 
 
 ##############highest probabiltiy age
-png("text/figures/Figure10.1.line.true.vs.high.prob.png", 
+png("text/figures/Figure10.1.line.true.vs.mode.png", 
     width = 15, height = 15,
     units = "cm", 
     pointsize = 8, res = 300)
@@ -619,7 +610,7 @@ f1 <-ggplot(ages.mean, aes(x = status, y = log(mean.true +1), group = tree,
                            color = extinction))+
   scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
   geom_point(size=3, shape=21, fill="white")+
-  geom_line(alpha = 0.5)+
+  geom_line(alpha = 0.4)+
   facet_wrap(~extinction,
              labeller = as_labeller(c(low = "Low extinction",
                                       intermediate = "Intermediate extinction",
@@ -627,25 +618,26 @@ f1 <-ggplot(ages.mean, aes(x = status, y = log(mean.true +1), group = tree,
   theme_bw()+
   ylab("log(True age + 1)")+
   xlab(NULL)+
-  theme(legend.position = "none")+
-  mynamestheme
+  mynamestheme+
+  theme(legend.position = "none")
+  
 
 
-##mean phylo age
-f2 <-ggplot(ages.mean, aes(x = status, y = log(mean.sto +1), group = tree,
+##mean mode age
+f2 <-ggplot(ages.mean, aes(x = status, y = log(mean.mode +1), group = tree,
                            colour = extinction))+
   scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
   geom_point(size=3, shape=21, fill="white")+
-  geom_line(alpha = 0.5)+
+  geom_line(alpha = 0.4)+
   facet_wrap(~extinction,
              labeller = as_labeller(c(low = "Low extinction",
                                       intermediate = "Intermediate extinction",
                                       high = "High extinction")))+
   theme_bw()+
-  ylab("log(Highest probability age + 1)")+
+  ylab("log(Most probable age + 1)")+
   xlab(NULL)+
-  theme(legend.position = "none")+
-  mynamestheme
+  mynamestheme+
+  theme(legend.position = "none")
 
 ##setting top
 top <- text_grob("Positive effect",
@@ -661,7 +653,7 @@ grid.arrange(f1, f2, nrow = 2, top = top, bottom= bottom)
 dev.off()
 
 #########mean probability age
-png("text/figures/Figure10.2.line.true.vs.mean.sto.png", 
+png("text/figures/Figure10.2.line.true.vs.mean.png", 
     width = 15, height = 15,
     units = "cm", 
     pointsize = 8, res = 300)
@@ -680,11 +672,12 @@ f1 <-ggplot(ages.mean, aes(x = status, y = log(mean.true +1), group = tree,
   theme_bw()+
   ylab("log(True age + 1)")+
   xlab(NULL)+
-  theme(legend.position = "none")+
-  mynamestheme
+  mynamestheme+
+  theme(legend.position = "none")
+  
 
 
-##mean phylo age
+##mean mean age
 f2 <-ggplot(ages.mean, aes(x = status, y = log(mean.mean +1), group = tree,
                            colour = extinction))+
   scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
@@ -697,8 +690,9 @@ f2 <-ggplot(ages.mean, aes(x = status, y = log(mean.mean +1), group = tree,
   theme_bw()+
   ylab("log(Mean probable age + 1)")+
   xlab(NULL)+
-  theme(legend.position = "none")+
-  mynamestheme
+  mynamestheme+
+  theme(legend.position = "none")
+  
 
 ##setting top
 top <- text_grob("Positive effect",
@@ -719,12 +713,12 @@ dev.off()
 #####################line plots no effect#################################
 
 ##Calculating the mean of each age for each tree and extinction background
-ages.mean.random <-ages.total.join.random %>% 
+ages.mean.random <-ages.total.random %>% 
                                   group_by(extinction, tree, status) %>%
                                   summarise(mean.true = mean(True.age),
                                   mean.phy = mean(Estimated.age),
-                                  mean.sto = mean(max.prob.age),
-                                  mean.mean = mean(mean.age)) 
+                                  mean.mode = mean(modal),
+                                  mean.mean = mean(mean)) 
 
 ##renaming tree for grouping
 ages.mean.random$tree <- paste0(ages.mean.random$tree, ".", 
@@ -787,7 +781,7 @@ dev.off()
 
 
 ##############highest probabiltiy age
-png("text/figures/Figure11.1.line.true.vs.high.prob.no.effect.png", 
+png("text/figures/Figure11.1.line.true.vs.mode.no.effect.png", 
     width = 15, height = 15,
     units = "cm", 
     pointsize = 8, res = 300)
@@ -806,12 +800,13 @@ f1 <-ggplot(ages.mean.random, aes(x = status, y = log(mean.true +1), group = tre
   theme_bw()+
   ylab("log(True age + 1)")+
   xlab(NULL)+
-  theme(legend.position = "none")+
-  mynamestheme
+  mynamestheme+
+  theme(legend.position = "none")
+  
 
 
-##mean phylo age
-f2 <-ggplot(ages.mean.random, aes(x = status, y = log(mean.sto +1), group = tree,
+##mean mode age
+f2 <-ggplot(ages.mean.random, aes(x = status, y = log(mean.mode +1), group = tree,
                            colour = extinction))+
   scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
   geom_point(size=3, shape=21, fill="white")+
@@ -821,10 +816,11 @@ f2 <-ggplot(ages.mean.random, aes(x = status, y = log(mean.sto +1), group = tree
                                       intermediate = "Intermediate extinction",
                                       high = "High extinction")))+
   theme_bw()+
-  ylab("log(Highest probability age + 1)")+
+  ylab("log(Most probable age + 1)")+
   xlab(NULL)+
-  theme(legend.position = "none")+
-  mynamestheme
+  mynamestheme+
+  theme(legend.position = "none")
+  
 
 ##setting top
 top <- text_grob("No effect",
@@ -840,7 +836,7 @@ grid.arrange(f1, f2, nrow = 2, top = top, bottom= bottom)
 dev.off()
 
 #########mean probability age
-png("text/figures/Figure11.2.line.true.vs.mean.sto.no.effect.png", 
+png("text/figures/Figure11.2.line.true.vs.mean.no.effect.png", 
     width = 15, height = 15,
     units = "cm", 
     pointsize = 8, res = 300)
@@ -859,8 +855,9 @@ f1 <-ggplot(ages.mean.random, aes(x = status, y = log(mean.true +1), group = tre
   theme_bw()+
   ylab("log(True age + 1)")+
   xlab(NULL)+
-  theme(legend.position = "none")+
-  mynamestheme
+  mynamestheme+
+  theme(legend.position = "none")
+  
 
 
 ##mean phylo age
@@ -876,8 +873,9 @@ f2 <-ggplot(ages.mean.random, aes(x = status, y = log(mean.mean +1), group = tre
   theme_bw()+
   ylab("log(Mean probable age + 1)")+
   xlab(NULL)+
-  theme(legend.position = "none")+
-  mynamestheme
+  mynamestheme+
+  theme(legend.position = "none")
+  
 
 ##setting top
 top <- text_grob("No effect",
