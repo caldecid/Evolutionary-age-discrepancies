@@ -542,11 +542,44 @@ ages.mean <-ages.total%>%
 ages.mean$tree <- paste0(ages.mean$tree, ".", 
                               ages.mean$extinction)
 
+#######ages ranking of correct relationship between age and signal
+ages.rank <- ages.mean %>% group_by(tree, extinction) %>%
+     mutate(true.rank = dense_rank(mean.true),
+         phy.rank = dense_rank(mean.phy),
+         mode.rank = dense_rank(mean.mode),
+         mean.rank = dense_rank(mean.mean)) %>% 
+      mutate(resp_phy = if_else(true.rank == phy.rank, 1, 0),
+         resp_mode = if_else(true.rank == mode.rank, 1, 0),
+         resp_mean = if_else(true.rank == mean.rank, 1, 0)) %>% 
+  
+  
+  ###comparing phylogenetic age
+  ages.comparison.phy <- ages.rank %>% group_by(tree, extinction) %>% 
+  summarise(sum_phy = sum(resp_phy)) %>% 
+  filter(sum_phy == 5) %>% 
+  group_by(extinction) %>% 
+  count()
+
+
+###comparing mode age from geometric function
+ages.comparison.mode <- ages.rank %>% group_by(tree, extinction) %>% 
+  summarise(sum_mode = sum( resp_mode)) %>% 
+  filter(sum_mode == 5) %>% 
+  group_by(extinction) %>% 
+  count()
+
+
+####comparing mean age from geometric function
+ages.comparison.mean <- ages.rank %>% group_by(tree, extinction) %>% 
+  summarise(sum_mean = sum(resp_mean)) %>% 
+  filter(sum_mean == 5) %>% 
+  group_by(extinction) %>% 
+  count()
 
 ##mean true age vs mean phylo age
 
 png("text/figures/Figure10.line.true.vs.phy.png", 
-    width = 15, height = 15,
+    width = 17, height = 15,
     units = "cm", 
     pointsize = 8, res = 300)
 
@@ -572,8 +605,14 @@ f1 <-ggplot(ages.mean, aes(x = status, y = log(mean.true +1), group = tree,
 f2 <-ggplot(ages.mean, aes(x = status, y = log(mean.phy +1), group = tree,
                            colour = extinction))+
   scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
-  geom_point(size=3, shape=21, fill="white")+
-  geom_line(alpha = 0.5)+
+  geom_point(size=3, shape = 21, fill="white")+
+  geom_line(alpha = 0.4)+
+  geom_text(data = ages.comparison.phy, aes(x = 2.05, y = 2.1,
+                                label = paste0("Correct estimation:", " ",
+                             round(n),"%")),
+            inherit.aes = FALSE,
+            size = 3, 
+            family = "serif")+
   facet_wrap(~extinction,
              labeller = as_labeller(c(low = "Low extinction",
                                         intermediate = "Intermediate extinction",
@@ -600,7 +639,7 @@ dev.off()
 
 ##############highest probabiltiy age
 png("text/figures/Figure10.1.line.true.vs.mode.png", 
-    width = 15, height = 15,
+    width = 17, height = 15,
     units = "cm", 
     pointsize = 8, res = 300)
 
@@ -629,6 +668,12 @@ f2 <-ggplot(ages.mean, aes(x = status, y = log(mean.mode +1), group = tree,
   scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
   geom_point(size=3, shape=21, fill="white")+
   geom_line(alpha = 0.4)+
+  geom_text(data = ages.comparison.mode, aes(x = 2.05, y = 2.1,
+                                  label = paste0("Correct estimation:", " ",
+                                                         round(n),"%")),
+            inherit.aes = FALSE,
+            size = 3, 
+            family = "serif")+
   facet_wrap(~extinction,
              labeller = as_labeller(c(low = "Low extinction",
                                       intermediate = "Intermediate extinction",
@@ -654,7 +699,7 @@ dev.off()
 
 #########mean probability age
 png("text/figures/Figure10.2.line.true.vs.mean.png", 
-    width = 15, height = 15,
+    width = 17, height = 15,
     units = "cm", 
     pointsize = 8, res = 300)
 
@@ -683,6 +728,12 @@ f2 <-ggplot(ages.mean, aes(x = status, y = log(mean.mean +1), group = tree,
   scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
   geom_point(size=3, shape=21, fill="white")+
   geom_line(alpha = 0.5)+
+  geom_text(data = ages.comparison.mean, aes(x = 2.05, y = 3,
+                                    label = paste0("Correct estimation:", " ",
+                                                           round(n),"%")),
+            inherit.aes = FALSE,
+            size = 3, 
+            family = "serif")+
   facet_wrap(~extinction,
              labeller = as_labeller(c(low = "Low extinction",
                                       intermediate = "Intermediate extinction",
@@ -893,9 +944,7 @@ dev.off()
 
 
 
-
-
-
+                                                         
 
 
 
