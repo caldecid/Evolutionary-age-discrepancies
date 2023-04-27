@@ -58,15 +58,15 @@ for(i in seq_along(functions_dir)){
 ##data 
 
 # results/data/raw
-raw <- "/results/data/raw"
+raw <- "results/data/raw"
 
 #results/data/processed
-pro <- "/results/data/processed"
+pro <- "results/data/processed"
 
 
 
 # results/data/meta
-meta <- "/results/data/metadata"
+meta <- "results/data/metadata"
 
 
 ###### figures files
