@@ -5,9 +5,11 @@ getAgesExtantSpecies <- function(Taxonomy, Phylo, Tol = NULL) {
   Nt <- Ntip(Phylo)
   Names <- c(Phylo$tip, as.character((Nt + 1):(Nt + Phylo$Nnode)))
   Taxonomy$label <- Names[Taxonomy$edge]
+  ##extant species
+  PhyloExtant <- prune.fossil.tips(Phylo)
   # What looks like end=0 is not exactly 0, so we need a tolerance 
   # to identify extant species
-  if (is.null(Tol)) {
+   if (is.null(Tol)) {
     Tol <- max(branching.times(Phylo)) / 1e6
   }
   # Keep only extant species
@@ -19,7 +21,8 @@ getAgesExtantSpecies <- function(Taxonomy, Phylo, Tol = NULL) {
   # look-up the maximum of start
   TaxaExtant <- aggregate(start ~ sp, data = TaxaExtantTmp, FUN = max)
   colnames(TaxaExtant)[2] <- 'Age'
-  TaxaExtant <- data.frame(TaxaExtant, TaxaExtantTmp[TaxaExtantTmp$end < Tol, -1])
+  TaxaExtant <- data.frame(TaxaExtant,
+                           TaxaExtantTmp[round(TaxaExtantTmp$end, 6) < Tol, -1])
   # Tip ages for phylogeny
   TipAgesCompl <- calculate_tip_ages(Phylo)
   colnames(TipAgesCompl) <- c('tip_compl', 'tip_length_compl')
@@ -27,7 +30,6 @@ getAgesExtantSpecies <- function(Taxonomy, Phylo, Tol = NULL) {
   M <- match(TaxaExtant$label, TipAgesCompl$tip_compl)
   TaxaExtant <- data.frame(TaxaExtant, tip_length_compl = TipAgesCompl[M, 2])
   # Get number of sister tips for each tip
-  PhyloExtant <- prune.fossil.tips(Phylo)
   PhyloExtantDF <- as.data.frame(as_tibble(PhyloExtant))
   PhyloExtantDF <- PhyloExtantDF[!is.na(PhyloExtantDF$label), ]
   M <- match(TaxaExtant$label, PhyloExtantDF$label)
