@@ -10,6 +10,11 @@ source(file.path(getwd(), "/source.R"))
 ages.total <- read_csv(file = file.path(getwd(), pro, c_status,
                                         "ages.total.csv"))
 
+ages.total$extinction <- as.factor(ages.total$extinction)
+
+ages.total$extinction <- factor(ages.total$extinction,
+                                levels = c("low", "intermediate", "high"))
+
 load(file = file.path(getwd(), pro, c_status, "trees.conservation.RData"))
 
 
@@ -34,13 +39,14 @@ mynamestheme <- theme(strip.text = element_text(family = "serif", size = (9)),
 ##determining how many species are 100% accurate regarding the geometric fun
 accurate.st <- ages.total %>%
   mutate(abs.accuracy.st = abs(rmode - rTrue.age)) %>% 
-  filter(abs.accuracy.st < 1e-8) %>% group_by(extinction) %>%
+  filter(abs.accuracy.st < 1e-6) %>%
+  group_by(extinction) %>%
   count()
 
 
 
 png("text/figures/Figure6.accuracy.mode.png",
-    width = 10, height = 15, units = "cm", 
+    width = 12, height = 15, units = "cm", 
     pointsize = 8, res = 300)
 
 f6 <- ages.total %>%
@@ -52,9 +58,9 @@ f6 <- ages.total %>%
                data = accurate.st,
                colour = "red")+
   geom_point(aes(x = 0, y = n), data = accurate.st, colour = "red")+
-  geom_text(data = accurate.st, aes(x = 0.35, y = 4000,
+  geom_text(data = accurate.st, aes(x = 0.35, y = 40000,
                                     label = paste("Correct estimation:",
-                                                  round(n/100),"%")),
+                                                  round(n/1000),"%")),
             size = 3.3, family = "serif")+
   xlim(-0.75,0.6)+
   #ylim(0, 5000)+
@@ -63,7 +69,7 @@ f6 <- ages.total %>%
                                       intermediate = "Intermediate extinction",
                                       high = "High extinction")))+
   theme_bw()+
-  xlab("Most probability age - True age")+
+  xlab("Most probable age - True age")+
   ylab("Species count")+
   ggtitle("Geometric function accuracy")
 
@@ -85,14 +91,14 @@ accurate.mean <- ages.total %>%
 
 
 png("text/figures/Figure6.1.accuracy.mean.png",
-    width = 10, height = 15, units = "cm", 
+    width = 12, height = 15, units = "cm", 
     pointsize = 8, res = 300)
 
 f6.1 <- ages.total %>%
   mutate(abs.accuracy.mean = abs(rmean - rTrue.age)) %>% 
   ggplot(aes(x = rmean - rTrue.age))+
   geom_histogram(position = "dodge", breaks = seq(-1, 1, 0.02))+
-  geom_text(x = 0.4, y = 1500,
+  geom_text(x = 0.4, y = 15000,
               label = "No correct estimation",
             size = 3.3, family = "serif")+
   xlim(-0.75,0.75)+
@@ -101,7 +107,7 @@ f6.1 <- ages.total %>%
                                       intermediate = "Intermediate extinction",
                                       high = "High extinction")))+
   theme_bw()+
-  xlab("Mean probability age - True age")+
+  xlab("Mean probable age - True age")+
   ylab("Species count")+
   ggtitle("Geometric function accuracy")
 

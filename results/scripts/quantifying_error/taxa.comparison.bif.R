@@ -211,7 +211,7 @@ f3 <- age.ext.bif %>%
   theme_bw()+
   #xlim(0, 1)+
   #scale_y_log10()+
-  xlab("Scale Ages")+
+  xlab("Ages (scaled)")+
   ylab("Species Count")+
   ggtitle("Bifurcating speciation")
 
@@ -233,7 +233,7 @@ accurate.age.bif <- df.ext.levels.bif %>%
 ######figure displaying a line and number of the accurate species
 ##png object
 png("text/figures/Figure4.ratio.age.bif.png",
-    width = 10, height = 15, units = "cm", 
+    width = 12, height = 15, units = "cm", 
     pointsize = 8, res = 300)
 
 f4 <- df.ext.levels.bif %>%
@@ -255,7 +255,7 @@ f4 <- df.ext.levels.bif %>%
                                       Intermediate = "Intermediate extinction",
                                       no_ext = "No extinction")))+
   theme_bw()+
-  xlab("Phylogenetic age - True age (scale)")+
+  xlab("Phylogenetic age - True age (scaled)")+
   ylab("Species count")+
   ggtitle("Bifurcating speciation")
   
@@ -302,7 +302,7 @@ q.wrong.bif <- sp.comp.bif %>% group_by(extinction.x) %>%
 
 ##figure ratio of oldest and youngest species for the estimated age
 png("text/figures/Figure5.oldest.vs.young.png", 
-    width = 15, height = 15, units = "cm", 
+    width = 12, height = 15, units = "cm", 
     pointsize = 8, res = 300)
 
 old.vs.young.bif <- sp.comp.bif %>% filter(age == "true.ratio") %>% 
@@ -377,7 +377,7 @@ old.vs.young.bud <- sp.comp.bud %>% filter(age == "true.ratio") %>%
 ######Both figures
 
 png("text/figures/Figure5.oldest.vs.young.bif.bud.png", 
-    width = 17, height = 13, units = "cm", 
+    width = 15, height = 15, units = "cm", 
     pointsize = 8, res = 300)
 
 
@@ -489,7 +489,7 @@ old.vs.young.random.bud <- sp.random.bud %>% filter(age == "true.ratio") %>%
 
 ##figure ratio of an old and younger random species for the estimated age
 png("text/figures/Figure5.old.vs.young.bif.buf.random.png",
-    width = 17, height = 13,
+    width = 15, height = 15,
     units = "cm", 
     pointsize = 8, res = 300)
 

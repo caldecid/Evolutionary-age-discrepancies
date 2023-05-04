@@ -225,7 +225,7 @@ f3 <- age.ext %>%
                                       no_ext = "No extinction")))+
              theme_bw()+
   #xlim(0, 1)+
-  xlab("Scale Ages")+
+  xlab("Ages (scaled)")+
   ylab("Species Count")+
   ggtitle("Budding speciation")
   
@@ -247,7 +247,7 @@ dev.off()
 ######figure displaying a line and number of the accurate species
  ##png object
 png("text/figures/Figure4.ratio.age.bud.png",
-    width = 10, height = 15, units = "cm", 
+    width = 12, height = 15, units = "cm", 
      pointsize = 8, res = 300)
  
 f4 <- df.ext.levels %>%
@@ -269,7 +269,7 @@ f4 <- df.ext.levels %>%
                                       Intermediate = "Intermediate extinction",
                                       no_ext = "No extinction")))+
   theme_bw()+
-  xlab("Phylogenetic age - True age (scale)")+
+  xlab("Phylogenetic age - True age (scaled)")+
   ylab("Species count")+
   ggtitle("Budding speciation")
   

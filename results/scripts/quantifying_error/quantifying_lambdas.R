@@ -61,7 +61,7 @@ mynamestheme <- theme(strip.text = element_text(family = "serif", size = (11)),
 
 ##Figure 1. True vs Phylogenetic age
 ##png object
-png("Figure1.scale.True.vs.Phylo.png", width = 17, height = 10, units = "cm", 
+png("text/figures/Figure1.scale.True.vs.Phylo.png", width = 17, height = 15, units = "cm", 
     pointsize = 8, res = 300)
 ##main
 scale.True.Phylo <- q.error.scale %>% filter(speciation %in% 
@@ -73,8 +73,8 @@ scale.True.Phylo <- q.error.scale %>% filter(speciation %in%
   geom_abline(slope = 1, intercept = 0, linetype = "dashed")+
   xlim(0,1)+
   ylim(0,1)+
-  xlab("Scale True age")+
-  ylab("Scale Phylogenetic age")+
+  xlab("True age (scaled)")+
+  ylab("Phylogenetic age (scaled)")+
   scale_color_manual(values = c("#1b9e77", "#d95f02", "#7570b3"),
                      name="Turnover",
                      breaks=c("[0,0.33]", "(0.33,0.66]", "(0.66,0.99]"),
@@ -90,7 +90,8 @@ dev.off()
 
 
 # fig 1 scale true vs phylo without intermediate turnover -----------------
-png("Figure1.scale.True.vs.Phylo.turnover.png", width = 17, height = 10, units = "cm", 
+png("text/figures/Figure1.scale.True.vs.Phylo.turnover.png", width = 17,
+    height = 12, units = "cm", 
     pointsize = 8, res = 300)
 
 scale.turnover <- q.error.scale %>% filter(speciation %in% 
@@ -103,8 +104,8 @@ scale.turnover <- q.error.scale %>% filter(speciation %in%
   geom_abline(slope = 1, intercept = 0, linetype = "dashed")+
   xlim(0,1)+
   ylim(0,1)+
-  xlab("Scale True age")+
-  ylab("Scale Phylogenetic age")+
+  xlab("True age (scaled)")+
+  ylab("Phylogenetic age (scaled)")+
   scale_color_manual(values = c("#d95f02", "#7570b3"),
                      name="Turnover",
                      breaks=c("[0,0.25]", "(0.75,1]"),
@@ -118,8 +119,8 @@ scale.turnover + mynamestheme
 dev.off()
 
 ####anagenetic True vs phylogenetic
-png("SM.Fig1.scale.True.vs.phylogenetic.png", width = 17,
-    height = 10, units = "cm", 
+png("text/supplementary/SM.Fig1.scale.True.vs.phylogenetic.png", width = 17,
+    height = 12, units = "cm", 
     pointsize = 8, res = 300)
 ##main
 scale.true.phy.ana <- q.error.scale %>% filter(speciation %in% 
@@ -131,8 +132,8 @@ scale.true.phy.ana <- q.error.scale %>% filter(speciation %in%
   geom_abline(slope = 1, intercept = 0, linetype = "dashed")+
   xlim(0,1)+
   ylim(0,1)+
-  xlab("Scale True age")+
-  ylab("Scale Phylogenetic age")+
+  xlab("True age (scaled)")+
+  ylab("Phylogenetic age (scaled)")+
   scale_color_manual(values = c("#1b9e77", "#d95f02", "#7570b3"),
                      name="Turnover",
                      breaks=c("[0,0.33]", "(0.33,0.66]", "(0.66,0.99]"),
@@ -147,7 +148,8 @@ dev.off()
 
 ##SM Figure True vs Phylo anagenetic without intermediate turnover
 
-png("FigureSM1.scale.anagenetic.turnover.png", width = 17, height = 10, units = "cm", 
+png("text/supplementary/FigureSM1.scale.anagenetic.turnover.png", width = 17,
+    height = 12, units = "cm", 
     pointsize = 8, res = 300)
 
 scale.turnover.ana <- q.error.scale %>% filter(speciation %in% 
@@ -160,8 +162,8 @@ scale.turnover.ana <- q.error.scale %>% filter(speciation %in%
   geom_abline(slope = 1, intercept = 0, linetype = "dashed")+
   xlim(0,1)+
   ylim(0,1)+
-  xlab("Scale True age")+
-  ylab("Scale Phylogenetic age")+
+  xlab("True age (scaled)")+
+  ylab("Phylogenetic age (scaled)")+
   scale_color_manual(values = c("#d95f02", "#7570b3"),
                      name="Turnover",
                      breaks=c("[0,0.25]", "(0.75,1]"),
