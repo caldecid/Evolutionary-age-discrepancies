@@ -138,14 +138,14 @@ clado.df.0.bif$mode <- rep("Bifurcating", nrow(clado.df.0.bif))
 
 
 ##manipulating the data frame
-clado.df.bif.0 <- clado.df.0.bif %>% select(label, Age, tip_length_reconstr, mode,
-                                        tree ,mu, root.age) %>% 
-  rename(species = label,
-         True.age = Age,
-         Estimated.age = tip_length_reconstr) %>%
-  mutate(rTrue.age = True.age/root.age,
-         rEstimated.age = Estimated.age/root.age,
-         accuracy = rEstimated.age - rTrue.age)
+clado.df.bif.0 <- clado.df.0.bif %>% select(label, Age, tip_length_reconstr,
+                                      mode, tree ,mu, root.age) %>% 
+                              rename(species = label,
+                                     True.age = Age,
+                                     Estimated.age = tip_length_reconstr) %>%
+                              mutate(rTrue.age = True.age/root.age,
+                                     rEstimated.age = Estimated.age/root.age,
+                                     accuracy = rEstimated.age - rTrue.age)
 ##intensity of extinction
 clado.df.bif.0$extinction <- rep("no_ext", nrow(clado.df.bif.0))
 
@@ -169,6 +169,11 @@ write_csv(df.ext.levels.bif, file = file.path(getwd(), pro, q_error,
 ##reading
 df.ext.levels.bif <- read_csv(file = file.path(getwd(), pro, q_error,
                                                 "taxa.ext.lev.bif.csv")) 
+##defining levels for facet
+df.ext.levels.bif$extinction <- as.factor(df.ext.levels.bif$extinction)
+
+df.ext.levels.bif$extinction <- factor(df.ext.levels$extinction, 
+                                 levels = c("no_ext", "Intermediate", "High"))
 
 # Figures -----------------------------------------------------------------
 
@@ -183,18 +188,18 @@ mynamestheme <- theme(strip.text = element_text(family = "serif", size = (9)),
                                                   face = "bold"),
                       legend.text = element_text(family = "serif", size = (10)),
                       legend.background = element_rect(fill="gray90",
-                                                       size=.5, linetype="dotted"))
+                                                   size=.5, linetype="dotted"))
 
 ##histograms for scaled True age and Estimate age
 age.ext.bif <- df.ext.levels.bif %>% 
                           pivot_longer(cols = c("rTrue.age", "rEstimated.age"),
                                           names_to = "type", values_to = "age")
 ##type as factor
-age.ext.bif$type <- factor(age.ext$type, levels = c("rTrue.age", "rEstimated.age"),
+age.ext.bif$type <- factor(age.ext.bif$type, levels = c("rTrue.age", "rEstimated.age"),
                        labels = c("rTrue.age", "rEstimated.age"))
 
 ##png object
-png("text/figures/Figure3.facet.True.phylo.age.bif.png",
+png("text/supplementary/FigureSM4.Dist.true.phy.bif.png",
     width = 14, height = 15, units = "cm", 
     pointsize = 8, res = 300)
 
@@ -232,7 +237,7 @@ accurate.age.bif <- df.ext.levels.bif %>%
 
 ######figure displaying a line and number of the accurate species
 ##png object
-png("text/figures/Figure4.ratio.age.bif.png",
+png("text/supplementary/FigureSM3.ratio.age.bif.png",
     width = 12, height = 15, units = "cm", 
     pointsize = 8, res = 300)
 
@@ -311,20 +316,20 @@ old.vs.young.bif <- sp.comp.bif %>% filter(age == "true.ratio") %>%
                                    breaks = seq(-0.7, 1, by = 0.02),
                                    fill = "blue")+
                     geom_vline(xintercept = 0, color = "red")+
-                    geom_text(aes(x = 0.5, y = 150,
-                                 label = paste("Qualitatively wrong:", "0","%")),
+                    geom_text(aes(x = -0.36, y = 150,
+                               label = paste("Wrong:", "0","%")),
                               inherit.aes = FALSE,
                               size = 3, family = "serif")+
                     facet_wrap(~ extinction.x, nrow = 3,
-                               labeller = as_labeller(c(High = "High",
-                                                        Intermediate = "Intermediate",
-                                                        no_ext = "No extinction")))+
+                              labeller = as_labeller(c(High = "High extinction",
+                                      Intermediate = "Intermediate extinction",
+                                                    no_ext = "No extinction")))+
                     scale_fill_discrete(name = NULL,
                                         breaks=c("est.ratio", "true.ratio"),
                                         labels=c("Phylogenetic ages",
                                                  "True ages"))+
-                    xlab("Oldest sp - Younges sp")+
-                    ylab("Tree Number")+
+                    xlab(NULL)+
+                    ylab("Frequency")+
                     ggtitle("Bifurcating speciation")+
                     theme_bw()+
                     mynamestheme+
@@ -340,6 +345,13 @@ dev.off()
 sp.comp.bud <- read_csv(file = file.path(getwd(), pro, q_error, 
                                          "sp.comp.bud.csv"))
 
+##defining levels for facets
+sp.comp.bud$extinction.x <- as.factor(sp.comp.bud$extinction.x)
+
+sp.comp.bud$extinction.x <- factor(sp.comp.bud$extinction.x, 
+                             levels = c("no_ext", "Intermediate", "High"))
+  
+
 ####defining how many sp are qualitatively wrong 
 q.wrong.bud<- sp.comp.bud %>% group_by(extinction.x) %>% 
   filter(ratio < 0) %>% count() %>% 
@@ -353,20 +365,20 @@ old.vs.young.bud <- sp.comp.bud %>% filter(age == "true.ratio") %>%
                                    breaks = seq(-0.7, 1, by = 0.02),
                                    fill = "blue")+
                     geom_vline(xintercept = 0, color = "red")+
-                    geom_text(data = q.wrong.bud, aes(x = 0.6, y = 90,
-                                        label = paste("Qualitatively wrong:",
+                    geom_text(data = q.wrong.bud, aes(x = -0.4, y = 90,
+                                        label = paste("Wrong:",
                                                 q_wrong,"%")),
                               inherit.aes = FALSE,
                               size = 3, family = "serif")+
                     facet_wrap(~ extinction.x, nrow = 3,
-                               labeller = as_labeller(c(High = "High",
-                                                        Intermediate = "Intermediate",
-                                                        no_ext = "No extinction")))+
+                            labeller = as_labeller(c(High = "High extinction",
+                                      Intermediate = "Intermediate extinction",
+                                                    no_ext = "No extinction")))+
                     scale_fill_discrete(name = NULL,
                                         breaks=c("est.ratio", "true.ratio"),
                                         labels=c("Phylogenetic ages",
                                                  "True ages"))+
-                    xlab("Oldest sp - Younges sp")+
+                    xlab(NULL)+
                     ylab(NULL)+
                     ggtitle("Budding speciation")+
                     theme_bw()+
@@ -376,15 +388,19 @@ old.vs.young.bud <- sp.comp.bud %>% filter(age == "true.ratio") %>%
 
 ######Both figures
 
-png("text/figures/Figure5.oldest.vs.young.bif.bud.png", 
+png("text/figures/Figure5.oldest.vs.youngest.png", 
     width = 15, height = 15, units = "cm", 
     pointsize = 8, res = 300)
 
 
-ggarrange(old.vs.young.bif, old.vs.young.bud, ncol = 2,
+plot <- ggarrange(old.vs.young.bif, old.vs.young.bud, ncol = 2,
           common.legend = FALSE)
 
+annotate_figure(plot, bottom = text_grob("Delta True Age", 
+                       family = "serif", face = "bold", size = 13))
+
 dev.off()
+
 
 
 #############distribution between two random species############################
@@ -410,21 +426,21 @@ old.vs.young.random.bif <- sp.random.bif %>% filter(age == "true.ratio") %>%
           geom_histogram(alpha = 0.5, position = 'identity',
                          breaks = seq(-0.7, 1, by = 0.02), fill = "blue")+
           geom_vline(xintercept = 0, color = "red")+
-          geom_text(data = q.wrong.random.bif, aes(x = 0.5, y = 400,
-                                       label = paste("Qualitatively wrong:",
+          geom_text(data = q.wrong.random.bif, aes(x = -0.36, y = 400,
+                                       label = paste("Wrong:",
                                                              q_wrong,"%")),
                     inherit.aes = FALSE,
                     size = 3, family = "serif")+
           facet_wrap(~ extinction, nrow = 3,
-                     labeller = as_labeller(c(High = "High",
-                                              Intermediate = "Intermediate",
+                     labeller = as_labeller(c(High = "High extinction",
+                                      Intermediate = "Intermediate extinction",
                                               no_ext = "No extinction")))+
           scale_fill_discrete(name = NULL,
                               breaks=c("est.ratio", "true.ratio"),
                               labels=c("Phylogenetic ages",
                                        "True ages"))+
-          xlab("Old sp - Young sp (random)")+
-          ylab("Tree Number")+
+          xlab(NULL)+
+          ylab("Frequency")+
           ggtitle("Bifurcating speciation")+
           theme_bw()+
           mynamestheme
@@ -466,20 +482,20 @@ old.vs.young.random.bud <- sp.random.bud %>% filter(age == "true.ratio") %>%
                              breaks = seq(-0.7, 1, by = 0.02),
                              fill = "blue")+
               geom_vline(xintercept = 0, color = "red")+
-              geom_text(data = q.wrong.random.bud, aes(x = 0.5, y = 200,
-                                                   label = paste("Qualitatively wrong:",
+              geom_text(data = q.wrong.random.bud, aes(x = -0.36, y = 200,
+                                                   label = paste("Wrong:",
                                                                  q_wrong,"%")),
                         inherit.aes = FALSE,
                         size = 3, family = "serif")+
               facet_wrap(~ extinction, nrow = 3,
-                         labeller = as_labeller(c(High = "High",
-                                                  Intermediate = "Intermediate",
-                                                  no_ext = "No extinction")))+
+                         labeller = as_labeller(c(High = "High extinction",
+                                      Intermediate = "Intermediate extinction",
+                                        no_ext = "No extinction")))+
               scale_fill_discrete(name = NULL,
                                   breaks=c("est.ratio", "true.ratio"),
                                   labels=c("Phylogenetic ages",
                                            "True ages"))+
-              xlab("Old sp - Young sp (random)")+
+              xlab(NULL)+
               ylab(NULL)+
               ggtitle("Budding speciation")+
               theme_bw()+
@@ -488,14 +504,17 @@ old.vs.young.random.bud <- sp.random.bud %>% filter(age == "true.ratio") %>%
 ##PNG object
 
 ##figure ratio of an old and younger random species for the estimated age
-png("text/figures/Figure5.old.vs.young.bif.buf.random.png",
+png("text/figures/Figure6.old.vs.young.random.png",
     width = 15, height = 15,
     units = "cm", 
     pointsize = 8, res = 300)
 
 
-ggarrange(old.vs.young.random.bif, old.vs.young.random.bud, 
+plot.random <- ggarrange(old.vs.young.random.bif, old.vs.young.random.bud, 
           ncol = 2, common.legend = FALSE)
+
+annotate_figure(plot.random, bottom = text_grob("Delta True Age", 
+                                  family = "serif", face = "bold", size = 13))
 
 dev.off()
 

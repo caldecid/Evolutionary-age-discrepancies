@@ -31,8 +31,10 @@ mynamestheme <- theme(strip.text = element_text(family = "serif", size = (9)),
                       legend.title = element_text(family = "serif", size = (11),
                                                   face = "bold"),
                       legend.text = element_text(family = "serif", size = (10)),
-                      legend.background = element_rect(fill="gray90",
-                                                  size=.5, linetype="dotted"))
+                      legend.background = element_rect(fill = "gray90",
+                                          size = 0.5, linetype = "dotted"),
+                      legend.position = "bottom")
+                      
 
 ##accuracy of the highest prob age regarding true age
 
@@ -115,20 +117,58 @@ f6.1 + mynamestheme
 
 dev.off()
 
-######################estimating coverage using the Confidence intervals
+
+######################estimating geometric function coverage##################
+
+#############coverage for a specific tree
+##pivot longer for having in the same column phylo and mean age
+
+ages.filt <- ages.total %>% filter(tree == "tree.13") %>% 
+  pivot_longer(cols = c("rPhylo.age", "rmean"),
+               names_to = "Estimated",
+               values_to = "ages") %>% 
+  mutate(low_sc = lwr_ci/root.age,
+         upr_sc = upr_ci/root.age)
+
+ages.filt$Estimated <- as.factor(ages.filt$Estimated)
+
+ages.filt$Estimated <- factor(ages.filt$Estimated, 
+                              levels = c("rPhylo.age", "rmean"))
+
+#####ploting 
+
+cover.specific <- ggplot(ages.filt,
+                        aes(x = rTrue.age, y = ages, color = Estimated))+
+        geom_point(alpha = 0.7)+
+        scale_color_discrete(labels = c(rmean = "Mean \n geometric",
+                                        rPhylo.age = "Phylogenetic"))+
+        labs(color = NULL)+
+        geom_segment(aes(x = rTrue.age, y = low_sc, xend = rTrue.age,
+                         yend = upr_sc),
+                     colour = "gray", alpha = 0.5)+
+          facet_wrap(~extinction, nrow = 3,
+                   labeller = as_labeller(c(high = "High extinction",
+                                    intermediate = "Intermediate extinction",
+                                            low = "Low extinction")))+
+        theme_bw()+
+        xlab("True age")+
+        ylab("Estimated age")+
+        mynamestheme
+
+
+
+dev.off()
+
+#######total coverage##############
 
 coverage.st <- ages.total%>%
                   filter(abs(True.age - modal) < 1e-08 | 
                            True.age >= lwr_ci & True.age <= upr_ci) %>% 
                  count(extinction) %>% 
-                 mutate(cov = n/10000 * 100) 
-
-png("text/figures/Figure6.2.coverage.CI.geometric.png",
-    width = 10, height = 12, units = "cm", 
-    pointsize = 8, res = 300)
+                 mutate(cov = n/10000 * 10) 
 
 
-coverage.st %>% ggplot(aes(extinction, cov, fill = extinction))+
+cover.total <- ggplot(coverage.st, aes(extinction, cov, fill = extinction))+
       geom_col(width=0.75)+
       geom_text(aes(label = paste(round(cov), "%")),
                 size = 3.5, family = "serif",
@@ -140,13 +180,24 @@ coverage.st %>% ggplot(aes(extinction, cov, fill = extinction))+
       ylab("Coverage (%)") + 
       xlab("Extinction Background")+
       theme_bw()+
-      theme(legend.position = "none")+
-      mynamestheme
+      mynamestheme+
+      theme(legend.position = "none")
         
      
+
+
+######binding both figures
+png("text/figures/Figure7.png", 
+    width = 15, height = 15, units = "cm", 
+    pointsize = 8, res = 300)
+
+
+ggarrange(cover.total, cover.specific, ncol = 2,
+                  common.legend = FALSE)
+
+
+
 dev.off()
-
-
 
 
 

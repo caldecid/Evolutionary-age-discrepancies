@@ -105,7 +105,7 @@ ages.int$species <- paste0(ages.int$label,".", ages.int$tree)
 
 
 ############low extinction
-ages.low <- Map(getAgesExtantSpecies, tax.low, trees.low, , Tol = 1e-6) 
+ages.low <- Map(getAgesExtantSpecies, tax.low, trees.low,  Tol = 1e-6) 
 
 ages.low <- do.call("rbind", ages.low) %>% 
                     rename(True.age = Age,
@@ -286,7 +286,7 @@ mynamestheme <- theme(strip.text = element_text(family = "serif", size = (9)),
                       legend.position = "bottom")
 
 #####True age vs Phylo age and Conservation status
-png("text/figures/Figure7.conservation_true.vs.phylo.png", width = 15, height = 15,
+png("text/figures/Figure8.conservation_true.vs.phylo.png", width = 15, height = 15,
     units = "cm", 
     pointsize = 8, res = 300)
 
@@ -559,7 +559,7 @@ ages.rank <- ages.mean %>% group_by(tree, extinction) %>%
   ###comparing phylogenetic age
   ages.comparison.phy <- ages.rank %>% group_by(tree, extinction) %>% 
   summarise(sum_phy = sum(resp_phy)) %>% 
-  filter(sum_phy >= 3) %>% 
+  filter(sum_phy == 5) %>% 
   group_by(extinction) %>% 
   count()
 
@@ -567,7 +567,7 @@ ages.rank <- ages.mean %>% group_by(tree, extinction) %>%
 ###comparing mode age from geometric function
 ages.comparison.mode <- ages.rank %>% group_by(tree, extinction) %>% 
   summarise(sum_mode = sum( resp_mode)) %>% 
-  filter(sum_mode >= 3) %>% 
+  filter(sum_mode == 5) %>% 
   group_by(extinction) %>% 
   count()
 
@@ -575,18 +575,13 @@ ages.comparison.mode <- ages.rank %>% group_by(tree, extinction) %>%
 ####comparing mean age from geometric function
 ages.comparison.mean <- ages.rank %>% group_by(tree, extinction) %>% 
   summarise(sum_mean = sum(resp_mean)) %>% 
-  filter(sum_mean >= 3) %>% 
+  filter(sum_mean == 5) %>% 
   group_by(extinction) %>% 
   count()
 
-##mean true age vs mean phylo age
-
-png("text/figures/Figure10.line.true.vs.phy.png", 
-    width = 17, height = 15,
-    units = "cm", 
-    pointsize = 8, res = 300)
 
 
+###true age plot
 
 f1 <-ggplot(ages.mean, aes(x = status, y = log(mean.true +1), group = tree,
                            color = extinction))+
@@ -605,7 +600,7 @@ f1 <-ggplot(ages.mean, aes(x = status, y = log(mean.true +1), group = tree,
   
 
 
-##mean phylo age
+##Phylogenetic age plot
 f2 <-ggplot(ages.mean, aes(x = status, y = log(mean.phy +1), group = tree,
                            colour = extinction))+
   scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
@@ -627,17 +622,43 @@ f2 <-ggplot(ages.mean, aes(x = status, y = log(mean.phy +1), group = tree,
   mynamestheme+
   theme(legend.position = "none")
   
+####Mean geometric age plot
 
-##setting top
-top <- text_grob("Positive effect",
-                 family = "serif", size = 13,  face = "bold")
+f3 <-ggplot(ages.mean, aes(x = status, y = log(mean.mean +1), group = tree,
+                           colour = extinction))+
+  scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
+  geom_point(size=3, shape=21, fill="white")+
+  geom_line(alpha = 0.1)+
+  geom_text(data = ages.comparison.mean, aes(x = 2.05, y = 3,
+                                             label = paste0("Correct estimation:", " ",
+                                                            round(n/10),"%")),
+            inherit.aes = FALSE,
+            size = 3, 
+            family = "serif")+
+  facet_wrap(~extinction,
+             labeller = as_labeller(c(low = "Low extinction",
+                                      intermediate = "Intermediate extinction",
+                                      high = "High extinction")))+
+  theme_bw()+
+  ylab("log(Mean probable age + 1)")+
+  xlab(NULL)+
+  mynamestheme+
+  theme(legend.position = "none")
+
+
+
+###png object
+png("text/figures/Figure7.true.phylo.mean.phy.png", 
+    width = 17, height = 17,
+    units = "cm", 
+    pointsize = 8, res = 300)
 
 ##bottom
 bottom <- text_grob("Conservation status",
                     family = "serif", size = 13,  face = "bold")
 
 ##grid for plotting both figures
-grid.arrange(f1, f2, nrow = 2, top = top, bottom= bottom)
+grid.arrange(f1, f2, f3, nrow = 3, bottom= bottom)
 
 dev.off()
 
