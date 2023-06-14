@@ -14,6 +14,11 @@ ind.sp <- ind_sp %>% distinct(species, .keep_all = TRUE) %>%
           pivot_longer(cols = ends_with(".age"), names_to = "type",
                        values_to = "ages")
 
+###changing the value of the Homo sapiens phylogeny (Rivas-González et al. 2023)
+
+ind.sp <- ind.sp %>%                               
+                 mutate(ages = replace(ages, ages == 6.175880, 10))
+
 ##########Figure
 mynamestheme <- theme(strip.text = element_text(family = "serif", size = (9)),
                       plot.title = element_text(family = "serif", size = (12),
@@ -21,6 +26,8 @@ mynamestheme <- theme(strip.text = element_text(family = "serif", size = (9)),
                       axis.title = element_text(family = "serif", size = (11),
                                                 face = "bold"),
                       axis.text = element_text(family = "serif", size = (9)),
+                      axis.text.y = element_text(family = "serif", size = (10),
+                                                 face = "italic"),
                       legend.title = element_text(family = "serif", size = (11),
                                                   face = "bold"),
                       legend.text = element_text(family = "serif", size = (10)),

@@ -89,10 +89,12 @@ scale.True.Phylo + mynamestheme
 dev.off()
 
 
-# fig 1 scale true vs phylo without intermediate turnover -----------------
-png("text/figures/Figure1.scale.True.vs.Phylo.turnover.png", width = 17,
+# fig 3 scale true vs phylo without intermediate turnover -----------------
+png("text/figures/Figure3.True.vs.Phylo.turnover.png", width = 17,
     height = 12, units = "cm", 
     pointsize = 8, res = 300)
+
+
 
 scale.turnover <- q.error.scale %>% filter(speciation %in% 
                                              c("Bifurcating", "Budding")) %>% 
@@ -104,8 +106,8 @@ scale.turnover <- q.error.scale %>% filter(speciation %in%
   geom_abline(slope = 1, intercept = 0, linetype = "dashed")+
   xlim(0,1)+
   ylim(0,1)+
-  xlab("True age (scaled)")+
-  ylab("Phylogenetic age (scaled)")+
+  xlab("True age")+
+  ylab("Phylogenetic age")+
   scale_color_manual(values = c("#d95f02", "#7570b3"),
                      name="Turnover",
                      breaks=c("[0,0.25]", "(0.75,1]"),
@@ -114,7 +116,7 @@ scale.turnover <- q.error.scale %>% filter(speciation %in%
   facet_wrap(~speciation)+
   theme_bw()
 
-scale.turnover + mynamestheme
+scale.turnover + mynamestheme 
 
 dev.off()
 
@@ -162,8 +164,8 @@ scale.turnover.ana <- q.error.scale %>% filter(speciation %in%
   geom_abline(slope = 1, intercept = 0, linetype = "dashed")+
   xlim(0,1)+
   ylim(0,1)+
-  xlab("True age (scaled)")+
-  ylab("Phylogenetic age (scaled)")+
+  xlab("True age")+
+  ylab("Phylogenetic age")+
   scale_color_manual(values = c("#d95f02", "#7570b3"),
                      name="Turnover",
                      breaks=c("[0,0.25]", "(0.75,1]"),
@@ -177,7 +179,7 @@ scale.turnover.ana + mynamestheme
 dev.off()
 
 
-# MAPE Figure 2 --------------------------------------------------------------
+# MAPE Figure 4 --------------------------------------------------------------
 
 ##MAPE grouped by mu, div, turnover and speciation modes
 q.ext.bud.bif <- q.error.lam %>% filter(speciation %in% 
@@ -189,13 +191,15 @@ q.ext.bud.bif <- q.error.lam %>% filter(speciation %in%
 
 q.ext.bud.bif$lambda <- as.factor(q.ext.bud.bif$lambda)
 
+
+
 ###Figure MAPE vs turnover
-png("Figure2.MAPE.vs.turnover.png", width = 15, height = 10, units = "cm", 
+png("text/figures/Figure4.MAPE.vs.turnover.png", width = 15, height = 10, units = "cm", 
     pointsize = 8, res = 300)
 
-mape.turn <- ggplot(q.ext.bud.bif, aes(x = turnover, y = mape, lambda))+
+mape.turn <- ggplot(q.ext.bud.bif, aes(x = turnover, y = mape))+
   geom_point(alpha = 0.8, aes(color = lambda))+
-  scale_color_discrete()+
+  scale_color_discrete("Speciation rates")+
   facet_wrap(~speciation)+
   xlab("Turnover")+
   ylab("MAPE (%)")+
@@ -222,13 +226,13 @@ ana <- c("ana_bif" = "Anagenetic-Bifurcating",
          "ana_bud" = "Anagenetic-Budding")
 
 ##MAPE vs Turnover anagenetic
-png("SM.Fig2.mape.vs.turnover.png", width = 17, height = 10, units = "cm", 
+png("text/supplementary/SM2.mape.vs.turnover.png", width = 17, height = 10, units = "cm", 
     pointsize = 8, res = 300)
 
 mape.turn.ana <- q.ext.ana %>% filter(mape < 500) %>% 
   ggplot(aes(x = turnover, y = mape, lambda))+
   geom_point(alpha = 0.8, aes(color = lambda))+
-  scale_color_discrete()+
+  scale_color_discrete("Speciation rates")+
   facet_wrap(~speciation, labeller = as_labeller(ana))+
   xlab("Turnover")+
   ylab("MAPE (%)")+
