@@ -183,7 +183,7 @@ dev.off()
 
 ##MAPE grouped by mu, div, turnover and speciation modes
 q.ext.bud.bif <- q.error.lam %>% filter(speciation %in% 
-                                          c("Bifurcating", "Budding")) %>% 
+                              c("Bifurcating", "Budding")) %>% 
   slice(sample(1:n())) %>% 
   group_by(mu,speciation, div,
            turnover, lambda) %>% 

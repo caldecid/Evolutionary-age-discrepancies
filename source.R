@@ -31,6 +31,7 @@ library(HDInterval)
 library(arules)
 library(gridExtra)
 library(grid)
+library(spatstat)
 
 # set working directory -----------
 wd <- "/home/alunos/Documents/caldecid/Evolutionary-age-discrepancies"

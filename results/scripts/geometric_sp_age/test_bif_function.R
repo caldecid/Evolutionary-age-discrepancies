@@ -48,6 +48,8 @@ tax.low <- lapply(trees.low, sim.taxonomy, beta = 1)
 save(tax.high, tax.int, tax.low,
      file = file.path(getwd(), pro, newdir, "tax_bif.RData"))
 
+load(file = file.path(getwd(), pro, newdir, "tax_bif.RData"))
+
 
 # Get ages and variables --------------------------------------------------
 
@@ -149,7 +151,7 @@ ages.low$species <- paste0(ages.low$label,".", ages.low$tree)
 
 # bifurcating function ----------------------------------------------------
 
-###high extinction scenario
+#empty list
 high.list <- list()
 
 for(i in 1:nrow(ages.high)){
@@ -158,9 +160,15 @@ for(i in 1:nrow(ages.high)){
                                    node_age = ages.high$Estimated.age[i])
 }
 
-##most probable age
+
+##expected age
 high.expected.age <- as.vector(do.call("rbind",
-                        lapply(high.list, function(x) sum(x$time * x$prob))))
+                     lapply(high.list, function(x) sum(x$time * x$prob))))
+
+##median age
+high.median.age <- as.vector(do.call("rbind", lapply(high.list, function(x)
+                                 weighted.median(x = x$time,
+                                   w = x$prob))))
 
 ##confidence interval
 
@@ -172,9 +180,10 @@ upr.high <- sapply(high.list, function(x) weightedQuantile(x$time, x$prob,
                                                            0.975))
 
 ##joining dataframes
-ages.high.bif <- cbind(ages.high, high.expected.age,
+ages.high.bif <- cbind(ages.high, high.expected.age, high.median.age,
                              lwr.high, upr.high) %>% 
                     rename(ex_age = high.expected.age,
+                           median_age = high.median.age,
                            lwr.ci = lwr.high,
                            upr.ci = upr.high)
   
@@ -187,8 +196,12 @@ for(i in 1:nrow(ages.int)){
                                    node_age = ages.int$Estimated.age[i])
 }
 ##expected age
-int.expected.age <- as.vector(do.call("rbind",
-                      lapply(int.list, function(x) sum(x$time * x$prob))))
+int.expected.age <- sapply(int.list, function(x) sum(x$time * x$prob))
+
+##median age
+int.median.age <- sapply(int.list, function(x)
+                              weighted.median(x = x$time,
+                                            w = x$prob))
 
 ##confidence interval
 
@@ -199,9 +212,10 @@ lwr.int <- sapply(int.list, function(x) weightedQuantile(x$time, x$prob,
 upr.int <- sapply(int.list, function(x) weightedQuantile(x$time, x$prob,
                                                            0.975))
 ##joining dataframes
-ages.int.bif <- cbind(ages.int, int.expected.age,
+ages.int.bif <- cbind(ages.int, int.expected.age, int.median.age,
                        lwr.int, upr.int) %>% 
                     rename(ex_age = int.expected.age,
+                           median_age = int.median.age,
                            lwr.ci = lwr.int,
                            upr.ci = upr.int)
 
@@ -216,8 +230,12 @@ for(i in 1:nrow(ages.low)){
 }
 
 ##expected age
-low.expected.age <- as.vector(do.call("rbind",
-                          lapply(low.list, function(x) sum(x$time * x$prob))))
+low.expected.age <- sapply(low.list, function(x) sum(x$time * x$prob))
+
+##median age
+low.median.age <- sapply(low.list, function(x)
+                           weighted.median(x = x$time,
+                                w = x$prob))
 
 ##confidence interval
 
@@ -228,15 +246,17 @@ lwr.low <- sapply(low.list, function(x) weightedQuantile(x$time, x$prob,
 upr.low <- sapply(low.list, function(x) weightedQuantile(x$time, x$prob,
                                                          0.975))
 ##joining dataframes
-ages.low.bif <- cbind(ages.low, low.expected.age,
+ages.low.bif <- cbind(ages.low, low.expected.age, low.median.age,
                       lwr.low, upr.low) %>% 
                 rename(ex_age = low.expected.age,
+                       median_age = low.median.age,
                        lwr.ci = lwr.low,
                        upr.ci = upr.low)
 
 ##################merging the dataframes with different extinction#####
 ages.total.bif <- rbind(ages.high.bif, ages.int.bif, ages.low.bif) %>% 
                   mutate(rexp_age = ex_age/root.age,
+                         rmedian_age = median_age/root.age,
                          rlow_ci = lwr.ci/root.age,
                          rupr_ci = upr.ci/root.age)
 
@@ -248,6 +268,8 @@ ages.total.bif$extinction <- factor(ages.total.bif$extinction,
 
 ##saving
 write_csv(ages.total.bif, file = file.path(pro, newdir, "ages.total.bif.csv"))
+
+ages.total.bif <- read_csv(file = file.path(pro, newdir, "ages.total.bif.csv"))
 
 # figures -----------------------------------------------------------------
 
@@ -269,39 +291,38 @@ mynamestheme <- theme(strip.text = element_text(family = "serif", size = (9)),
 ##accuracy of the expected age regarding true age
 
 ##determining how many species are 100% accurate regarding the bifurcating fun
-accurate.bif.up <- ages.total.bif %>%
-  mutate(abs.accuracy = abs(rupr_ci - rTrue.age)) %>% 
-  filter(abs.accuracy < 1e-5) %>%
-  group_by(extinction) %>%
-  count()
+accurate.bif.median <- ages.total.bif %>% 
+   mutate(abs.accuracy = abs(rmedian_age - rTrue.age)) %>% 
+   filter(abs.accuracy < 1e-5) %>%
+   count(extinction)
 
 
 
-png("text/figures/accuracy.bif.upper.png",
+png("text/figures/accuracy.bif.median.png",
     width = 12, height = 15, units = "cm", 
     pointsize = 8, res = 300)
 
 f6 <- ages.total.bif %>%
-  mutate(abs.accuracy = abs(rupr_ci - rTrue.age)) %>% 
+    mutate(abs.accuracy = abs(rmedian_age - rTrue.age)) %>% 
   filter(abs.accuracy > 1e-5) %>% 
-  ggplot(aes(x = rexp_age - rTrue.age))+
+  ggplot(aes(x = rexp_age - rPhylo.age))+
   geom_histogram(position = "dodge", breaks = seq(-0.8, 0.4, 0.02))+
   geom_segment(aes(x = 0, y = 0, xend = 0, yend = n),
-              data = accurate.bif.up,
+              data = accurate.bif.median,
                colour = "red")+
-  geom_point(aes(x = 0, y = n), data = accurate.bif.up, colour = "red")+
-  geom_text(data = accurate.bif.up, aes(x = 0.08, y = 40000,
+  geom_point(aes(x = 0, y = n), data =accurate.bif.median, colour = "red")+
+  geom_text(data = accurate.bif.median, aes(x = 0.08, y = 4000,
                                     label = paste("Correct estimation:",
                                     round(n/1000),"%")),
             size = 3.3, family = "serif")+
   xlim(-0.12,0.12)+
-  #ylim(0, 5000)+
+  ylim(0, 5000)+
   facet_wrap(~ extinction, nrow = 3,
-             labeller = as_labeller(c(low = "Low extinction",
-                                      intermediate = "Intermediate extinction",
-                                      high = "High extinction")))+
+            labeller = as_labeller(c(low = "Low extinction",
+                                     intermediate = "Intermediate extinction",
+                                    high = "High extinction")))+
   theme_bw()+
-  xlab("Upper CI - True age")+
+  xlab("Median age - True age")+
   ylab("Frequency")+
   ggtitle("Bifurcating function accuracy")
 
@@ -316,7 +337,7 @@ dev.off()
 ##pivot longer for having in the same column phylo and mean age
 
 ages.filt <- ages.total.bif %>% filter(tree == "tree.13") %>% 
-  pivot_longer(cols = c("rPhylo.age", "rexp_age"),
+  pivot_longer(cols = c("rPhylo.age", "rmedian"),
                names_to = "Estimated",
                values_to = "ages")
 
@@ -393,3 +414,37 @@ ggarrange(cover.total, cover.specific, ncol = 2,
 
 
 dev.off()
+
+
+####################MAPE###############
+
+
+ages.average <- ages.total.bif %>% 
+               slice(sample(1:n())) %>% 
+            group_by(extinction, tree) %>% 
+  summarise(mape.phy = mean(abs(True.age - Estimated.age)/True.age)*100,
+            mape.ex = mean(abs(True.age - ex_age)/True.age)*100,
+            mape.median = mean(abs(True.age - median_age)/True.age)*100) %>% 
+  pivot_longer(cols = starts_with("mape."),
+               values_to = "mape", names_to = "estimate")
+
+###PLOT
+png("text/figures/MAPE.bif.median.png", 
+    width = 15, height = 15, units = "cm", 
+    pointsize = 8, res = 300)
+
+
+  ggplot(ages.average, aes(y = mape, x = estimate, fill = estimate))+
+  geom_boxplot(outlier.shape = NA)+
+  facet_wrap(~extinction,  labeller = as_labeller(c(high = "High extinction",
+                                  intermediate = "Intermediate extinction",
+                                  low = "Low extinction")))+
+  scale_fill_discrete(name = "Estimation",
+                        labels = c("Expected", "Median", "Phylogenetic"))+
+  ylim(0, 150)+
+  ylab("MAPE (%)")+
+  theme_bw()+
+  mynamestheme+
+  theme(axis.text.x = element_blank())
+  
+  dev.off()
