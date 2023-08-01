@@ -7,6 +7,7 @@ p1 <- function(lam, mu, t){
   return(p1t)
 }
 
+
 get_sp_age_prob <- function(lam, mu, node_age,
                             # discretization of species age
                             n_bins_per_myr = 100,
@@ -20,10 +21,12 @@ get_sp_age_prob <- function(lam, mu, node_age,
   p_no_events = p1(lam, mu, dt) ^ (tot_t / dt)
   # conditional prob of no events
   p = p_no_events / p_node_age_PB
-  # prob of species age == node age
+  # prob of specieme age
   p_at_node = p[length(tot_t)]
-  # prob of species age younger than node age
-  p_before_node = p[-length(tot_t)] / sum((p[-length(tot_t)])) * (1 - p_at_node)
+  # prob of species age younger than node age (old version)
+  # p_before_node = p[-length(tot_t)] / sum((p[-length(tot_t)])) * (1 - p_at_node)
+  # new version:
+  p_before_node = p_no_events[-length(tot_t)] / sum((p_no_events[-length(tot_t)])) * (1 - p_at_node)
   # prob vector along branch
   p_vec = c(p_before_node, p_at_node)
   res = NULL
@@ -32,12 +35,3 @@ get_sp_age_prob <- function(lam, mu, node_age,
   return(res)
 }
 
-
-# example
-lam = 0.5
-mu = 0.2
-node_age = 4.5
-res = get_sp_age_prob(lam, mu, node_age)
-
-plot(res$time, res$prob)
-expected_age = sum(res$time * res$prob)

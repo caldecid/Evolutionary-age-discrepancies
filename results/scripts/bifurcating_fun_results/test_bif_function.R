@@ -331,7 +331,7 @@ f6 + mynamestheme
 dev.off()
 
 
-######################estimating geometric function coverage##################
+######################estimating function coverage##################
 
 #############coverage for a specific tree
 ##pivot longer for having in the same column phylo and mean age
