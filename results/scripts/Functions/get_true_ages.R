@@ -69,3 +69,41 @@ getAgesSpecies <- function(Taxonomy, Phylo, Tol = NULL) {
   TaxaExtant <- data.frame(TaxaExtant, TaxaExtantTmp[TaxaExtantTmp$end < Tol, -1])
   return(TaxaExtant)
 }
+
+
+# Function species ages from incomplete sampled trees ---------------
+getAgesExtantIncompleteSampling <- function(AgesExtant,
+                                            Tree,
+                                            SamplingFrac,
+                                            AgeDependent = FALSE) {
+  
+  ##SamplingFrac = Fraction of the extant tips to be removed from the tree
+  # Remove fossils
+  TreeExtant <- prune.fossil.tips(Tree)
+  # Incomplete sampling
+  NumPrune <- round(Ntip(TreeExtant) * SamplingFrac)
+  if (AgeDependent) {
+    # Probability to remove a tip proportional to its age
+    TerminalBranchLengths <- calculate_tip_ages(TreeExtant)
+    M <- match(TreeExtant$tip.label, TerminalBranchLengths$tip)
+    TerminalBranchLengths <- TerminalBranchLengths[M, ]
+    TipsToDrop <- sample(TreeExtant$tip.label,
+                         size = NumPrune,
+                         prob = TerminalBranchLengths$tip.age)
+  }
+  else {
+    # Uniform sampling
+    TipsToDrop <- sample(TreeExtant$tip.label, NumPrune)
+  }
+  IncompleteTreeExtant <- drop.tip(TreeExtant, TipsToDrop)
+  # Phylogentic ages
+  IncompletePhyloAges <- calculate_tip_ages(IncompleteTreeExtant)
+  # Match with AgesExtant and append phylogenetic ages of incomplete tree
+  Keep <- AgesExtant$label %in% IncompleteTreeExtant$tip.label
+  IncompleteAgesExtant <- AgesExtant[Keep, ]
+  M <- match(IncompleteAgesExtant$label, IncompletePhyloAges$tip)
+  IncompleteAgesExtant$IncompletePhyloAge <- IncompletePhyloAges[M, 2]
+  return(IncompleteAgesExtant)
+}
+
+
