@@ -224,6 +224,8 @@ ages.incomplete <- rbind(ages.bif.incomp.25,
 write.csv(ages.incomplete,
     file = "results/data/processed/incomplete_sampling/ages.incomplete.uniform.csv")
 
+ages.incomplete <- read_csv("results/data/processed/incomplete_sampling/ages.incomplete.uniform.csv")
+
 #########figures################################
 
 # figures -----------------------------------------------------------------
@@ -245,49 +247,78 @@ mynamestheme <- theme(strip.text = element_text(family = "serif", size = (9)),
 
 
 ##bifurcating 0.25 sampling
-ages.average.0.25.bif <- ages.bif.incomp.25 %>% 
- ### group_by(speciation, fraction, tree) %>% 
-  summarise(mape.phy = mean(abs(True.age - Estimated.age)/True.age)*100,
-            mape.0.25.bif = mean(abs(True.age - Incomp.age)/True.age)*100)
+ages.average.0.25.bif <- ages.incomplete %>% filter(fraction == 0.25,
+                                                    speciation == "bif") %>% 
+        group_by(tree) %>% 
+        summarise(mape.phy = mean(abs(True.age - Estimated.age)/True.age)*100,
+                mape.0.25 = mean(abs(True.age - Incomp.age)/True.age)*100)
 
 ##bifurcating 0.50 sampling
-ages.average.0.5.bif <- ages.bif.incomp.50 %>% 
+ages.average.0.5.bif <- ages.incomplete %>% filter(fraction == 0.50,
+                                                   speciation == "bif") %>% 
           group_by(tree) %>% 
-          summarise(mape.phy = mean(abs(True.age - Estimated.age)/True.age)*100,
-                  mape.0.50.bif = mean(abs(True.age - Incomp.age)/True.age)*100)
+          summarise(mape.0.50 = 
+                      mean(abs(True.age - Incomp.age)/True.age)*100)
+
+###merging mape dataframe
+ages.mape.bif <- left_join(ages.average.0.25.bif, ages.average.0.5.bif,
+                           by = "tree") %>% 
+                  pivot_longer(cols = starts_with("mape."),
+                               values_to = "mape", names_to = "estimate")
+
+ages.mape.bif$speciation <- "bif"
+                          
 
 ##budding 0.25 sampling
-ages.average.0.25.bud <- ages.bud.incomp.25 %>% 
-              group_by(tree) %>% 
-              summarise(mape.phy = mean(abs(True.age - Estimated.age)/True.age)*100,
-                        mape.0.25.bud = mean(abs(True.age - Incomp.age)/True.age)*100)
+ages.average.0.25.bud <-ages.incomplete %>% filter(fraction == 0.25,
+                                                   speciation == "bud") %>% 
+                        group_by(tree) %>% 
+          summarise(mape.phy = mean(abs(True.age - Estimated.age)/True.age)*100,
+                  mape.0.25 = mean(abs(True.age - Incomp.age)/True.age)*100)
 
 ##budding 0.50 sampling
-ages.average.0.5.bud <- ages.bud.incomp.50 %>% 
+ages.average.0.5.bud <- ages.incomplete %>% filter(fraction == 0.50,
+                                                   speciation == "bud") %>% 
         group_by(tree) %>%  
-        summarise(mape.phy = mean(abs(True.age - Estimated.age)/True.age)*100,
-                  mape.0.50.bud = mean(abs(True.age - Incomp.age)/True.age)*100)
+        summarise(mape.0.50 = mean(abs(True.age - Incomp.age)/True.age)*100)
 
 
-%>% 
+###merging mape dataframe
+ages.mape.bud <- left_join(ages.average.0.25.bud, ages.average.0.5.bud,
+                           by = "tree") %>% 
   pivot_longer(cols = starts_with("mape."),
                values_to = "mape", names_to = "estimate")
 
+ages.mape.bud$speciation <- "bud"
+
+##mergind dataframes
+ages.mape <- rbind(ages.mape.bif, ages.mape.bud)
+
+ages.mape$estimate <- as.factor(ages.mape$estimate)
+
+ages.mape$estimate <- factor(ages.mape$estimate, levels = c("mape.phy",
+                                                            "mape.0.25",
+                                                            "mape.0.50"))
 ###PLOT
-png("text/figures/MAPE.bif.median.png", 
-    width = 15, height = 15, units = "cm", 
+png("text/figures/MAPE.incomplete.png", 
+    width = 17, height = 15, units = "cm", 
     pointsize = 8, res = 300)
 
 
-ggplot(ages.average, aes(y = mape, x = estimate, fill = estimate))+
+ggplot(ages.mape, aes(y = mape, x = estimate, fill = estimate))+
   geom_boxplot(outlier.shape = NA)+
-  facet_wrap(~extinction,  labeller = as_labeller(c(high = "High extinction",
-                                                    intermediate = "Intermediate extinction",
-                                                    low = "Low extinction")))+
-  scale_fill_discrete(name = "Estimation",
-                      labels = c("Expected", "Median", "Phylogenetic"))+
-  ylim(0, 150)+
+  facet_wrap(~speciation,  labeller = as_labeller(c(bif = "Bifurcating",
+                                                    bud = "Budding")))+
+  scale_fill_manual(values = c("#1b9e77", "#d95f02", "#7570b3"),
+                     name="Missing species",
+                     breaks=c("mape.phy", "mape.0.25", "mape.0.50"),
+                     labels=c("0%", "25%",
+                              "50%"))+
+  #scale_fill_discrete(name = "Estimation",
+                      #labels = c("Phylogenetic", "0.25 Fraction", "0.50 Fraction"))+
+  ylim(0, 500)+
   ylab("MAPE (%)")+
+  xlab(NULL)+
   theme_bw()+
   mynamestheme+
   theme(axis.text.x = element_blank())
