@@ -253,12 +253,22 @@ ages.average.0.25.bif <- ages.incomplete %>% filter(fraction == 0.25,
         summarise(mape.phy = mean(abs(True.age - Estimated.age)/True.age)*100,
                 mape.0.25 = mean(abs(True.age - Incomp.age)/True.age)*100)
 
+##the mean and sd of the error
+ages.average.0.25.bif %>% summarise(mean.phy = mean(mape.phy),
+                                    sd.phy = sd(mape.phy),
+                                    median.0.25 = mean(mape.0.25),
+                                    sd.0.25 = sd(mape.0.25))
+
 ##bifurcating 0.50 sampling
 ages.average.0.5.bif <- ages.incomplete %>% filter(fraction == 0.50,
                                                    speciation == "bif") %>% 
           group_by(tree) %>% 
           summarise(mape.0.50 = 
                       mean(abs(True.age - Incomp.age)/True.age)*100)
+
+##calculating the mean and sd of the error
+ages.average.0.5.bif %>% summarise( mean.0.5 = mean(mape.0.50),
+                                    sd.0.5 = sd(mape.0.50))
 
 ###merging mape dataframe
 ages.mape.bif <- left_join(ages.average.0.25.bif, ages.average.0.5.bif,
@@ -276,12 +286,20 @@ ages.average.0.25.bud <-ages.incomplete %>% filter(fraction == 0.25,
           summarise(mape.phy = mean(abs(True.age - Estimated.age)/True.age)*100,
                   mape.0.25 = mean(abs(True.age - Incomp.age)/True.age)*100)
 
+##calculating the mean and sd of the error
+ages.average.0.25.bud %>% summarise(mean.phy = mean(mape.phy),
+                                    sd.phy = sd(mape.phy),
+                                    mean.0.25 = mean(mape.0.25),
+                                    sd.0.25 = sd(mape.0.25))
 ##budding 0.50 sampling
 ages.average.0.5.bud <- ages.incomplete %>% filter(fraction == 0.50,
                                                    speciation == "bud") %>% 
         group_by(tree) %>%  
         summarise(mape.0.50 = mean(abs(True.age - Incomp.age)/True.age)*100)
 
+##calculating the mean and sd of the error
+ages.average.0.5.bud %>% summarise(mean.0.5 = mean(mape.0.50),
+                                    sd.0.5 = sd(mape.0.50))
 
 ###merging mape dataframe
 ages.mape.bud <- left_join(ages.average.0.25.bud, ages.average.0.5.bud,
@@ -307,6 +325,7 @@ png("text/figures/MAPE.incomplete.png",
 
 ggplot(ages.mape, aes(y = mape, x = estimate, fill = estimate))+
   geom_boxplot(outlier.shape = NA)+
+  geom_jitter(size = 0.1, alpha = 0.3)+
   facet_wrap(~speciation,  labeller = as_labeller(c(bif = "Bifurcating",
                                                     bud = "Budding")))+
   scale_fill_manual(values = c("#1b9e77", "#d95f02", "#7570b3"),
@@ -316,7 +335,7 @@ ggplot(ages.mape, aes(y = mape, x = estimate, fill = estimate))+
                               "50%"))+
   #scale_fill_discrete(name = "Estimation",
                       #labels = c("Phylogenetic", "0.25 Fraction", "0.50 Fraction"))+
-  ylim(0, 500)+
+  ylim(0, 1000)+
   ylab("MAPE (%)")+
   xlab(NULL)+
   theme_bw()+

@@ -557,7 +557,7 @@ ages.rank <- ages.mean %>% group_by(tree, extinction) %>%
   
   
   ###comparing phylogenetic age
-  ages.comparison.phy <- ages.rank %>% group_by(tree, extinction) %>% 
+  ages.comparison.phy <- ages.rank %>% group_by(tree) %>% 
   summarise(sum_phy = sum(resp_phy)) %>% 
   filter(sum_phy == 5) %>% 
   group_by(extinction) %>% 
