@@ -894,7 +894,7 @@ f50.bud <- ggplot(age.bud.mean.50.correct,
                        alpha = 0.4, color = "#969696")+
             geom_line(data = age.bud.mean.50.incorrect,
                       alpha = 0.4, color = "#969696")+
-  geom_text(data = ages.comparison.f50.bud, aes(x = 2.0, y = 2.15,
+  geom_text(data = ages.comparison.f50.bud, aes(x = 1.7, y = 1.9,
                               label = paste0("Error rate:", " ",error,
                                                                "%")),
             inherit.aes = FALSE,
