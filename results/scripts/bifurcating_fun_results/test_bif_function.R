@@ -284,51 +284,9 @@ mynamestheme <- theme(strip.text = element_text(family = "serif", size = (9)),
                                                   face = "bold"),
                       legend.text = element_text(family = "serif", size = (10)),
                       legend.background = element_rect(fill = "gray90",
-                                                       size = 0.5, linetype = "dotted"),
+                                             size = 0.5, linetype = "dotted"),
                       legend.position = "bottom")
 
-
-##accuracy of the expected age regarding true age
-
-##determining how many species are 100% accurate regarding the bifurcating fun
-accurate.bif.median <- ages.total.bif %>% 
-   mutate(abs.accuracy = abs(rmedian_age - rTrue.age)) %>% 
-   filter(abs.accuracy < 1e-5) %>%
-   count(extinction)
-
-
-
-png("text/figures/accuracy.bif.median.png",
-    width = 12, height = 15, units = "cm", 
-    pointsize = 8, res = 300)
-
-f6 <- ages.total.bif %>%
-    mutate(abs.accuracy = abs(rmedian_age - rTrue.age)) %>% 
-  filter(abs.accuracy > 1e-5) %>% 
-  ggplot(aes(x = rexp_age - rPhylo.age))+
-  geom_histogram(position = "dodge", breaks = seq(-0.8, 0.4, 0.02))+
-  geom_segment(aes(x = 0, y = 0, xend = 0, yend = n),
-              data = accurate.bif.median,
-               colour = "red")+
-  geom_point(aes(x = 0, y = n), data =accurate.bif.median, colour = "red")+
-  geom_text(data = accurate.bif.median, aes(x = 0.08, y = 4000,
-                                    label = paste("Correct estimation:",
-                                    round(n/1000),"%")),
-            size = 3.3, family = "serif")+
-  xlim(-0.12,0.12)+
-  ylim(0, 5000)+
-  facet_wrap(~ extinction, nrow = 3,
-            labeller = as_labeller(c(low = "Low extinction",
-                                     intermediate = "Intermediate extinction",
-                                    high = "High extinction")))+
-  theme_bw()+
-  xlab("Median age - True age")+
-  ylab("Frequency")+
-  ggtitle("Bifurcating function accuracy")
-
-f6 + mynamestheme
-
-dev.off()
 
 
 ######################estimating function coverage##################
@@ -337,14 +295,14 @@ dev.off()
 ##pivot longer for having in the same column phylo and mean age
 
 ages.filt <- ages.total.bif %>% filter(tree == "tree.13") %>% 
-  pivot_longer(cols = c("rPhylo.age", "rmedian"),
+  pivot_longer(cols = c("rPhylo.age", "rmedian_age"),
                names_to = "Estimated",
                values_to = "ages")
 
 ages.filt$Estimated <- as.factor(ages.filt$Estimated)
 
 ages.filt$Estimated <- factor(ages.filt$Estimated, 
-                              levels = c("rPhylo.age", "rexp_age"))
+                              levels = c("rPhylo.age", "rmedian_age"))
 
 #####ploting 
 
@@ -354,7 +312,7 @@ cover.specific <- ggplot(ages.filt,
                    yend = rupr_ci),
                colour = "gray", alpha = 0.5)+
   geom_point(alpha = 0.7)+
-  scale_color_discrete(labels = c(rexp_age = "Expectation",
+  scale_color_discrete(labels = c(rmedian_age = "Median",
                                   rPhylo.age = "Phylogenetic"))+
   labs(color = NULL)+
   scale_x_continuous(expand = c(0, 0)) +
@@ -383,10 +341,6 @@ coverage.bif <- ages.total.bif%>%
   mutate(cov = n/1000) 
 
 
-
-
-
-
 cover.total <- ggplot(coverage.bif, aes(extinction, cov, fill = extinction))+
   geom_col(width=0.75)+
   geom_text(aes(label = paste(round(cov), "%")),
@@ -403,7 +357,7 @@ cover.total <- ggplot(coverage.bif, aes(extinction, cov, fill = extinction))+
   theme(legend.position = "none")
 
 ######binding both figures
-png("text/figures/coverage.bif.function.png", 
+png("text/figures/FigureSM3.coverage.png", 
     width = 15, height = 15, units = "cm", 
     pointsize = 8, res = 300)
 
@@ -411,25 +365,51 @@ png("text/figures/coverage.bif.function.png",
 ggarrange(cover.total, cover.specific, ncol = 2,
           common.legend = FALSE)
 
-
-
 dev.off()
+
 
 
 ####################MAPE###############
 
 
+##For the MAPE for each category
 ages.average <- ages.total.bif %>% 
                slice(sample(1:n())) %>% 
             group_by(extinction, tree) %>% 
   summarise(mape.phy = mean(abs(True.age - Estimated.age)/True.age)*100,
-            mape.ex = mean(abs(True.age - ex_age)/True.age)*100,
+            mape.mean = mean(abs(True.age - ex_age)/True.age)*100,
             mape.median = mean(abs(True.age - median_age)/True.age)*100) %>% 
   pivot_longer(cols = starts_with("mape."),
                values_to = "mape", names_to = "estimate")
 
-###PLOT
-png("text/figures/MAPE.bif.median.png", 
+ages.average$estimate <- factor(ages.average$estimate,
+                            levels = c("mape.phy",
+                                       "mape.ex",
+                                       "mape.median"))
+
+##for the delta MAPE
+ages.delta <- ages.total.bif %>% 
+      slice(sample(1:n())) %>% 
+          group_by(extinction, tree) %>% 
+          summarise(mape.phy = mean(abs(True.age - Estimated.age)/True.age)*100,
+                    mape.mean = mean(abs(True.age - ex_age)/True.age)*100,
+                    mape.median = mean(abs(True.age - median_age)/True.age)*100,
+                    delta.mean = mape.mean - mape.phy,
+                    delta.median =  mape.median - mape.phy) %>% 
+          select(-c(mape.phy, mape.mean, mape.median)) %>% 
+          pivot_longer(cols = starts_with("delta."),
+                       values_to = "delta", names_to = "estimate")
+
+##Summaries for results
+delta.summary <- ages.delta %>% 
+                   pivot_wider(names_from = estimate, values_from = delta) %>%  
+                   group_by(extinction) %>% 
+                   summarise(mean.delta.mean = mean(delta.mean),
+                           sd.delta.mean = sd(delta.mean),
+                           mean.delta.median = mean(delta.median),
+                           sd.delta.median = sd(delta.median))
+###MAPE
+png("text/figures/MAPE.bif.prob.png", 
     width = 15, height = 15, units = "cm", 
     pointsize = 8, res = 300)
 
@@ -440,7 +420,7 @@ png("text/figures/MAPE.bif.median.png",
                                   intermediate = "Intermediate extinction",
                                   low = "Low extinction")))+
   scale_fill_discrete(name = "Estimation",
-                        labels = c("Expected", "Median", "Phylogenetic"))+
+                        labels = c("Phylogenetic","Mean", "Median"))+
   ylim(0, 150)+
   ylab("MAPE (%)")+
   theme_bw()+
@@ -448,3 +428,28 @@ png("text/figures/MAPE.bif.median.png",
   theme(axis.text.x = element_blank())
   
   dev.off()
+
+  
+###DELTA MAPE
+ png("text/figures/Delta.MAPE.png", 
+      width = 15, height = 15, units = "cm", 
+      pointsize = 8, res = 300)
+ 
+ ggplot(ages.delta, aes(y = delta, x = estimate, fill = estimate))+
+    geom_boxplot(outlier.shape = NA)+
+    facet_wrap(~extinction,  labeller = as_labeller(c(high = "High extinction",
+                                      intermediate = "Intermediate extinction",
+                                                      low = "Low extinction")))+
+    scale_fill_discrete(name = "Estimation",
+                        labels = c("Mean", "Median"))+
+    geom_hline(yintercept = 0, linetype = "dashed",
+               size = 1, colour = "red")+
+    ylim(-80, 10)+
+    ylab(expression(bold(Delta* "MAPE (%)")))+
+    xlab(NULL)+
+    theme_bw()+
+    mynamestheme+
+    theme(axis.text.x = element_blank())
+  
+  dev.off()
+  
