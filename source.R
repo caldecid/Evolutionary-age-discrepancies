@@ -32,6 +32,7 @@ library(arules)
 library(gridExtra)
 library(grid)
 library(spatstat)
+library(modi)
 
 # set working directory -----------
 wd <- "/home/alunos/Documents/caldecid/Evolutionary-age-discrepancies"

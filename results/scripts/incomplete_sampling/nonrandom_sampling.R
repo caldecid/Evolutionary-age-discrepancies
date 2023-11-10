@@ -229,6 +229,8 @@ ages.mean.0.bif <-ages.0.bif %>%
                             mean.phy = mean(Estimated.age))
 write_csv(ages.mean.0.bif,
       file = "results/data/processed/incomplete_sampling/ages.mean.0.bif.csv")
+
+ages.mean.0.bif <- read_csv(file = "results/data/processed/incomplete_sampling/ages.mean.0.bif.csv")
 ##Calculating the mean of each age for each tree for 25% missing sp                        
 ages.mean.25.bif <- ages.total.0.25 %>% 
                         group_by(tree, status) %>% 
@@ -237,6 +239,9 @@ ages.mean.25.bif <- ages.total.0.25 %>%
 
 write_csv(ages.mean.25.bif,
           file = "results/data/processed/incomplete_sampling/ages.mean.25.bif.csv")
+
+ages.mean.25.bif <- read_csv(file = "results/data/processed/incomplete_sampling/ages.mean.25.bif.csv")
+
 ####calculating the mean of each age for each tree for 50% missing sp
 ages.mean.50.bif <- ages.total.0.50.bif %>% 
                     group_by(tree, status) %>% 
@@ -245,6 +250,8 @@ ages.mean.50.bif <- ages.total.0.50.bif %>%
 
 write_csv(ages.mean.50.bif,
         file = "results/data/processed/incomplete_sampling/ages.mean.50.bif.csv")
+
+ages.mean.50.bif <- read_csv(file = "results/data/processed/incomplete_sampling/ages.mean.50.bif.csv")
 
 #######ages ranking 0%
 ages.rank.0.bif <- ages.mean.0.bif %>% group_by(tree) %>%
@@ -628,12 +635,22 @@ tree.bif.incorrect.f50 <- sample(tree.bif.incorrect.f50,
 
 
 ###fake facets for bifurcating
-ages.mean.0.bif$f0 <- "0% missing species"
+ages.mean.0.bif$f0 <- "Fully sampled"
 ages.mean.25.bif$f25 <- "25% missing species"
 ages.mean.50.bif$f50 <- "50% missing species"
 
 
 
+ages.mean.0.bif$status <- factor(ages.mean.0.bif$status, 
+                                 levels = c("LC", "NT", "VU", "EN", "CR"),
+                                 ordered= TRUE)
+ages.mean.25.bif$status <- factor(ages.mean.25.bif$status,
+                                  levels = c("LC", "NT", "VU", "EN", "CR"),
+                                  ordered= TRUE)
+
+ages.mean.50.bif$status <- factor(ages.mean.50.bif$status,
+                                  levels = c("LC", "NT", "VU", "EN", "CR"),
+                                  ordered= TRUE)
 
 ###0% missing species
 
@@ -650,7 +667,7 @@ f0.bif <- ggplot(ages.0.correct.bif,
                   aes(x = status, y = log(mean.phy +1), group = tree,
                            color = "#1b9e77"))+
   geom_point(size=3, shape = 21, fill="white", color = "#1b9e77")+
-  geom_line(alpha = 0.4, color = "#1b9e77")+
+  geom_line(alpha = 0.3, color = "#1b9e77")+
   geom_point(data = ages.0.incorrect.bif,
              size=3, shape = 21, fill="white",
              alpha = 0.4, color = "#969696")+
@@ -660,12 +677,12 @@ f0.bif <- ggplot(ages.0.correct.bif,
                      label = paste0("Error rate:", " ",error,
                                     "%")),
             inherit.aes = FALSE,
-            size = 3.5, 
+            size = 4, 
             family = "serif")+
   theme_bw()+
-  ylab("log(Phylogenetic age + 1)")+
+  ylab("log(Phylogenetic age)")+
   xlab(NULL)+
-  ggtitle("Bifurcating speciation")+
+  #ggtitle("Bifurcating speciation")+
   facet_wrap(~f0)+
   mynamestheme+
   theme(legend.position = "none")
@@ -684,7 +701,7 @@ f25.bif <- ggplot(ages.25.correct.bif,
                   aes(x = status, y = log(mean.0.25 +1), group = tree,
              color = "#d95f02"))+
   geom_point(size=3, shape = 21, fill="white", color = "#d95f02")+
-  geom_line(alpha = 0.4, color = "#d95f02")+
+  geom_line(alpha = 0.3, color = "#d95f02")+
   geom_point(data = ages.25.incorrect.bif,
              size=3, shape = 21, fill="white",
              alpha = 0.4, color = "#969696")+
@@ -694,10 +711,10 @@ f25.bif <- ggplot(ages.25.correct.bif,
                               label = paste0("Error rate:", " ",error,
                                                            "%")),
             inherit.aes = FALSE,
-            size = 3.5, 
+            size = 4, 
             family = "serif")+
   theme_bw()+
-  ylab("log(Phylogenetic age + 1)")+
+  ylab(NULL)+
   xlab(NULL)+
   facet_wrap(~f25)+
   mynamestheme+
@@ -722,17 +739,17 @@ f50.bif <- ggplot(ages.50.correct.bif,
   geom_line(alpha = 0.4, color = "red")+
   geom_point(data = ages.50.incorrect.bif,
              size=3, shape = 21, fill="white",
-             alpha = 0.4, color = "#969696")+
+             alpha = 0.3, color = "#969696")+
   geom_line(data = ages.50.incorrect.bif,
             alpha = 0.4, color = "#969696")+
   geom_text(data = ages.comparison.f50.bif, aes(x = 2.0, y = 2.35,
                                label = paste0("Error rate:", " ",error,
                                                            "%")),
             inherit.aes = FALSE,
-            size = 3.5, 
+            size = 4, 
             family = "serif")+
   theme_bw()+
-  ylab("log(Phylogenetic age + 1)")+
+  ylab(NULL)+
   xlab(NULL)+
   facet_wrap(~f50)+
   mynamestheme+
@@ -927,3 +944,22 @@ grid.arrange(x.bif, x.bud, ncol = 2, bottom = bottom)
 dev.off()
 
 
+
+##Only bifurcating speciation
+###png object
+png("text/figures/bif_nonrandom_CS.png", 
+    width = 25, height = 10,
+    units = "cm", 
+    pointsize = 8, res = 300)
+
+##bottom
+bottom <- text_grob("Conservation status",
+                    family = "serif", size = 13,  face = "bold")
+
+##top
+top <- text_grob("Bifurcating speciation",
+                 family = "serif", size = 13,  face = "bold")
+
+grid.arrange(f0.bif, f25.bif, f50.bif, ncol = 3, top = top,
+             bottom = bottom)
+dev.off()

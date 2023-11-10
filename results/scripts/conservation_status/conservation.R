@@ -41,16 +41,16 @@ save(trees.high, trees.int, trees.low,
       file = file.path(getwd(), pro, c_status,"trees.conservation.RData"))
 
 load(file = file.path(getwd(), pro, c_status,"trees.conservation.RData"))
-#############simulating taxonomies only budding######################
+#############simulating taxonomies only bifurcating######################
 
 ##high extinction
-tax.high <- lapply(trees.high, sim.taxonomy, beta = 0)
+tax.high <- lapply(trees.high, sim.taxonomy, beta = 1)
 
 ##intermediate extinction
-tax.int <- lapply(trees.int, sim.taxonomy, beta = 0)
+tax.int <- lapply(trees.int, sim.taxonomy, beta = 1)
 
 ##low extinction
-tax.low <- lapply(trees.low, sim.taxonomy, beta = 0)
+tax.low <- lapply(trees.low, sim.taxonomy, beta = 1)
 
 #############get ages and variables####################
 
@@ -131,125 +131,148 @@ ages.low$extinction <- rep("low", nrow(ages.low))
 ages.low$species <- paste0(ages.low$label,".", ages.low$tree)
 
 
-# geometric function -----------------------------------------------------
+# Probabilistic function -----------------------------------------------------
 
+#empty list
+high.list <- list()
 
-##high extinction
-ages.geometric.high <- lapply(trees.extant.high, getGeometricAges)
-
-##intermediate extinction
-ages.geometric.int <- lapply(trees.extant.int, getGeometricAges)
-
-##low extinction
-ages.geometric.low <- lapply(trees.extant.low, getGeometricAges)
-
-
-#####organizing geometric results############
-
-##assigning tree number and root age
-for(i in seq_along(ages.geometric.high)){
-  ages.geometric.high[[i]]$tree <- rep(paste0("tree.", i),
-                                        nrow(ages.geometric.high[[i]]))
-  ages.geometric.high[[i]]$species <- rownames(ages.geometric.high[[i]])
-  ages.geometric.high[[i]]$root.age <- rep(root.high[i],
-                                            nrow(ages.geometric.high[[i]]))
-}
-
-##unlist
-ages.high.st <- do.call("rbind", ages.geometric.high) 
-
-ages.high.st$species <- paste0(ages.high.st$species,".", ages.high.st$tree)
-
-ages.high.st$extinction <- rep("high", nrow(ages.high.st))
-
-##calculation scaled ages
-ages.high.st <- ages.high.st %>% mutate(rmode = modal/root.age,
-                                        rmean = mean/root.age)
-
-######intermediate extinction
-
-##assigning tree number and root age
-for(i in seq_along(ages.geometric.int)){
-  ages.geometric.int[[i]]$tree <- rep(paste0("tree.", i),
-                                         nrow(ages.geometric.int[[i]]))
-  ages.geometric.int[[i]]$species <- rownames(ages.geometric.int[[i]])
-  ages.geometric.int[[i]]$root.age <- rep(root.int[i],
-                                             nrow(ages.geometric.int[[i]]))
-  
-}
-
-##unlist
-ages.int.st <- do.call("rbind", ages.geometric.int) 
-
-ages.int.st$species <- paste0(ages.int.st$species,".", ages.int.st$tree)
-
-ages.int.st$extinction <- rep("intermediate", nrow(ages.int.st))
-
-
-##scaled ages
-ages.int.st <- ages.int.st %>% mutate(rmode = modal/root.age,
-                                      rmean = mean/root.age)
-
-#####low extinction
-
-##assigning tree number and root age
-for(i in seq_along(ages.geometric.low)){
-  ages.geometric.low[[i]]$tree <- rep(paste0("tree.", i),
-                                         nrow(ages.geometric.low[[i]]))
-  ages.geometric.low[[i]]$species <- rownames(ages.geometric.low[[i]])
-  ages.geometric.low[[i]]$root.age <- rep(root.low[i],
-                                             nrow(ages.geometric.low[[i]]))
-  
- 
-  
+for(i in 1:nrow(ages.high)){
+  high.list[[i]] <- get_sp_age_prob(lam = 0.3,
+                                   mu = 0.25,
+                                   node_age = ages.high$Estimated.age[i])
 }
 
 
-##unlist
-ages.low.st <- do.call("rbind", ages.geometric.low) 
+##mean age
+high.mean.age <- as.vector(do.call("rbind",
+                     lapply(high.list, function(x) sum(x$time * x$prob))))
 
-ages.low.st$species <- paste0(ages.low.st$species,".", ages.low.st$tree)
 
-ages.low.st$extinction <- rep("low", nrow(ages.low.st))
+##confidence interval
 
-ages.low.st <- ages.low.st %>% mutate(rmode = modal/root.age,
-                                      rmean = mean/root.age)
+#low
+lwr.high <- sapply(high.list, function(x) weighted.quantile(x$time, x$prob,
+                                                             0.025))
+#upper
+upr.high <- sapply(high.list, function(x) weighted.quantile(x$time, x$prob,
+                                                           0.975))
 
+##joining dataframes
+ages.high.bif <- cbind(ages.high, high.mean.age,
+                             lwr.high, upr.high) %>% 
+                    rename(mean_age = high.mean.age,
+                           lwr.ci = lwr.high,
+                           upr.ci = upr.high)
+
+
+#########intermediate extinction scenario
+int.list <- list()
+
+for(i in 1:nrow(ages.int)){
+  int.list[[i]] <- get_sp_age_prob(lam = 0.3,
+                                   mu = 0.15,
+                                   node_age = ages.int$Estimated.age[i])
+}
+##mean age
+int.mean.age <- sapply(int.list, function(x) sum(x$time * x$prob))
+
+##confidence interval
+
+#low
+lwr.int <- sapply(int.list, function(x) weighted.quantile(x$time, x$prob,
+                                                         0.025))
+#upper
+upr.int <- sapply(int.list, function(x) weighted.quantile(x$time, x$prob,
+                                                         0.975))
+##joining dataframes
+ages.int.bif <- cbind(ages.int, int.mean.age, int.median.age,
+                      lwr.int, upr.int) %>% 
+  rename(mean_age = int.mean.age,
+         lwr.ci = lwr.int,
+         upr.ci = upr.int)
+
+
+#######low extinction scenario
+low.list <- list()
+
+for(i in 1:nrow(ages.low)){
+  low.list[[i]] <- get_sp_age_prob(lam = 0.3,
+                                   mu = 0.05,
+                                   node_age = ages.low$Estimated.age[i])
+}
+
+##mean age
+low.mean.age <- sapply(low.list, function(x) sum(x$time * x$prob))
+
+##confidence interval
+
+#low
+lwr.low <- sapply(low.list, function(x) weighted.quantile(x$time, x$prob,
+                                                         0.025))
+#upper
+upr.low <- sapply(low.list, function(x) weighted.quantile(x$time, x$prob,
+                                                         0.975))
+##joining dataframes
+ages.low.bif <- cbind(ages.low, low.mean.age, low.median.age,
+                      lwr.low, upr.low) %>% 
+  rename(mean_age = low.mean.age,
+         lwr.ci = lwr.low,
+         upr.ci = upr.low)
+
+##################merging the dataframes with different extinction#####
+ages.total.bif <- rbind(ages.high.bif, ages.int.bif, ages.low.bif) %>% 
+  mutate(rmean_age = mean_age/root.age,
+         rlow_ci = lwr.ci/root.age,
+         rupr_ci = upr.ci/root.age)
+
+ages.total.bif$extinction <- as.factor(ages.total.bif$extinction)
+
+ages.total.bif$extinction <- factor(ages.total.bif$extinction,
+                                    levels = c("low", "intermediate", "high"),
+                                    ordered = TRUE)
+##saving
+write_csv(ages.total.bif, file = file.path(pro, c_status, "ages.total.bif.csv"))
 
 # simulating the extinction signal -----------------------------------------
 
 ####high extinction
-ages.high$status <- discretize(ages.high$rTrue.age, 
+ages.high.bif$status <- discretize(ages.high.bif$rTrue.age, 
                                method = "frequency", 
                                breaks = 5,
                                labels = c("LC", "NT", "VU", "EN", "CR")) 
 
-ages.high.total <- left_join(ages.high, ages.high.st, by = "species")
+
+ages.high.bif$status <- factor(ages.high.bif$status,
+                            levels = c("LC", "NT", "VU", "EN", "CR"),
+                            ordered= TRUE)
 
 ####intermediate extinction
-ages.int$status <- discretize(ages.int$rTrue.age, 
+ages.int.bif$status <- discretize(ages.int.bif$rTrue.age, 
                                method = "frequency", 
                                breaks = 5,
                                labels = c("LC", "NT", "VU", "EN", "CR")) 
 
 
-ages.int.total <- left_join(ages.int, ages.int.st, by = "species")
+ages.int.bif$status <- factor(ages.int.bif$status,
+                                 levels = c("LC", "NT", "VU", "EN", "CR"),
+                                 ordered= TRUE)
+
 
 #########low extinction
-ages.low$status <- discretize(ages.low$rTrue.age, 
+ages.low.bif$status <- discretize(ages.low.bif$rTrue.age, 
                               method = "frequency", 
                               breaks = 5,
                               labels = c("LC", "NT", "VU", "EN", "CR")) 
 
 
-ages.low.total <- left_join(ages.low, ages.low.st, by = "species")
+ages.low.bif$status <- factor(ages.low.bif$status,
+                                 levels = c("LC", "NT", "VU", "EN", "CR"),
+                                 ordered= TRUE)
+
 
 ###rbinding the dfs and cleaning the dataset
-ages.total <- rbind(ages.high.total, ages.int.total, ages.low.total) %>% 
-              select(-c(extinction.y, tree.y, root.age.y)) %>% 
-              rename(extinction = extinction.x,
-                     tree = tree.x,
-                     root.age = root.age.x)
+ages.total <- rbind(ages.high.bif, ages.int.bif, ages.low.bif)
+      
 
 ##saving
 write_csv(ages.total, file = file.path(getwd(), pro,
@@ -294,8 +317,7 @@ ages.mean <-ages.total%>%
                  group_by(extinction, tree, status) %>%
                  summarise(mean.true = mean(True.age),
                            mean.phy = mean(Estimated.age),
-                           mean.mode = mean(modal),
-                           mean.mean = mean(mean)) 
+                           mean.mean = mean(mean_age)) 
 
 ##renaming tree for grouping
 ages.mean$tree <- paste0(ages.mean$tree, ".", 
@@ -305,66 +327,168 @@ ages.mean$tree <- paste0(ages.mean$tree, ".",
 ages.rank <- ages.mean %>% group_by(tree, extinction) %>%
                      mutate(true.rank = dense_rank(mean.true),
                          phy.rank = dense_rank(mean.phy),
-                         mode.rank = dense_rank(mean.mode),
                          mean.rank = dense_rank(mean.mean)) %>% 
                       mutate(resp_phy = if_else(true.rank == phy.rank, 1, 0),
-                         resp_mode = if_else(true.rank == mode.rank, 1, 0),
                          resp_mean = if_else(true.rank == mean.rank, 1, 0)) 
   
   
   ###comparing phylogenetic age
-  ages.comparison.phy <- ages.rank %>% group_by(tree) %>% 
+  ages.comparison.phy <- ages.rank %>% group_by(extinction, tree) %>% 
   summarise(sum_phy = sum(resp_phy)) %>% 
-  filter(sum_phy == 5) %>% 
-  group_by(extinction) %>% 
-  count()
+  filter(sum_phy < 5) %>% 
+  count()%>% 
+  mutate(error = n/1000*100)
 
 
-###comparing mode age from geometric function
-ages.comparison.mode <- ages.rank %>% group_by(tree, extinction) %>% 
-  summarise(sum_mode = sum( resp_mode)) %>% 
-  filter(sum_mode == 5) %>% 
-  group_by(extinction) %>% 
-  count()
-
-
-####comparing mean age from geometric function
-ages.comparison.mean <- ages.rank %>% group_by(tree, extinction) %>% 
+###comparing mean estimation from the probabilistic function
+ages.comparison.mean <- ages.rank %>% group_by(extinction, tree) %>% 
   summarise(sum_mean = sum(resp_mean)) %>% 
-  filter(sum_mean == 5) %>% 
-  group_by(extinction) %>% 
-  count()
+  filter(sum_mean < 5) %>% 
+  count()%>% 
+  mutate(error = n/1000*100)
 
 
 
 ###true age plot
 
-f1 <-ggplot(ages.mean, aes(x = status, y = log(mean.true +1), group = tree,
-                           color = extinction))+
-  scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
-  geom_point(size=3, shape=21, fill="white")+
-  geom_line(alpha = 0.1)+
-  facet_wrap(~extinction,
-             labeller = as_labeller(c(low = "Low extinction",
-                                    intermediate = "Intermediate extinction",
-                                             high = "High extinction")))+
-  theme_bw()+
-  ylab("log(True age + 1)")+
-  xlab(NULL)+
-  mynamestheme+
-  theme(legend.position = "none")
+##extracting 100 trees for each extinction scenario
+
+##low
+tree.low <- ages.mean %>%
+            filter(extinction == "low") %>% pull(tree)
+             
+tree.low <- sample(tree.low, size = 100)
+
+##intermediate
+tree.int <- ages.mean %>%
+  filter(extinction == "intermediate") %>% pull(tree)
+
+tree.int <- sample(tree.int, size = 100)
+
+##high
+tree.high <- ages.mean %>%
+  filter(extinction == "high") %>% pull(tree)
+
+tree.high <- sample(tree.high, size = 100)  
+
+##binding
+trees.true <- c(tree.low, tree.int, tree.high)
+
+###plot
+ftrue <- ages.mean %>% filter(tree %in% trees.true) %>% 
+        ggplot(aes(x = status, y = log(mean.true +1), group = tree,
+                                   color = extinction))+
+          scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
+          geom_point(size=3, shape=21, fill="white")+
+          geom_line(alpha = 0.3)+
+          facet_wrap(~extinction,
+                     labeller = as_labeller(c(low = "Low extinction",
+                                            intermediate = "Intermediate extinction",
+                                                     high = "High extinction")))+
+          theme_bw()+
+          ylab("log(True age)")+
+          xlab(NULL)+
+          mynamestheme+
+          theme(legend.position = "none")
   
+##Phylogenetic 
+
+##low extinction
+
+##correct estimation 
+phy.low.correct <- ages.rank %>% filter(extinction == "low") %>%
+               group_by(tree) %>% 
+                summarise(sum_phy = sum(resp_phy, na.rm = TRUE)) %>% 
+                filter(sum_phy == 5) %>%
+             pull(tree)
+
+phy.low.correct <- sample(phy.low.correct, 
+                          size = round(length(phy.low.correct)*0.1))
 
 
-##Phylogenetic age plot
-f2 <-ggplot(ages.mean, aes(x = status, y = log(mean.phy +1), group = tree,
+##correct estimation 
+phy.low.incorrect <- ages.rank %>% filter(extinction == "low") %>%
+  group_by(tree) %>% 
+  summarise(sum_phy = sum(resp_phy, na.rm = TRUE)) %>% 
+  filter(sum_phy < 5) %>%
+  pull(tree)
+
+phy.low.incorrect <- sample(phy.low.incorrect,
+                            size = length(phy.low.incorrect)*0.1)
+
+
+##int extinction
+
+##correct estimation 
+phy.int.correct <- ages.rank %>% filter(extinction == "intermediate") %>%
+  group_by(tree) %>% 
+  summarise(sum_phy = sum(resp_phy, na.rm = TRUE)) %>% 
+  filter(sum_phy == 5) %>%
+  pull(tree)
+
+phy.int.correct <- sample(phy.int.correct, 
+                          size = round(length(phy.int.correct)*0.1))
+
+
+##incorrect estimation 
+phy.int.incorrect <- ages.rank %>% filter(extinction == "intermediate") %>%
+  group_by(tree) %>% 
+  summarise(sum_phy = sum(resp_phy, na.rm = TRUE)) %>% 
+  filter(sum_phy < 5) %>%
+  pull(tree)
+
+phy.int.incorrect <- sample(phy.int.incorrect,
+                            size = round(length(phy.int.incorrect)*0.1))
+
+##high extinction
+
+##correct estimation 
+phy.high.correct <- ages.rank %>% filter(extinction == "high") %>%
+  group_by(tree) %>% 
+  summarise(sum_phy = sum(resp_phy, na.rm = TRUE)) %>% 
+  filter(sum_phy == 5) %>%
+  pull(tree)
+
+phy.high.correct <- sample(phy.high.correct, 
+                          size = round(length(phy.high.correct)*0.1))
+
+
+##incorrect estimation 
+phy.high.incorrect <- ages.rank %>% filter(extinction == "high") %>%
+  group_by(tree) %>% 
+  summarise(sum_phy = sum(resp_phy, na.rm = TRUE)) %>% 
+  filter(sum_phy < 5) %>%
+  pull(tree)
+
+phy.high.incorrect <- sample(phy.high.incorrect,
+                            size = round(length(phy.high.incorrect)*0.1))
+
+##binding correct
+phy.correct <- c(phy.low.correct, phy.int.correct, phy.high.correct)
+
+##filtering correct dataset
+ages.phy.correct <- ages.mean %>% filter(tree %in% phy.correct)
+
+##binding incorrect
+phy.incorrect <- c(phy.low.incorrect, phy.int.incorrect, phy.high.incorrect)
+
+##filtering incorrect dataset
+ages.phy.incorrect <- ages.mean %>% filter(tree %in% phy.incorrect)
+
+##Plot
+fphylo <-ggplot(ages.phy.correct, aes(x = status, y = log(mean.phy +1), group = tree,
                            colour = extinction))+
   scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
   geom_point(size=3, shape = 21, fill="white")+
-  geom_line(alpha = 0.1)+
+  geom_line(alpha = 0.3)+
+  geom_point(data = ages.phy.incorrect,
+             size=3, shape = 21, fill="white",
+             alpha = 0.4, color = "#969696")+
+  geom_line(data = ages.phy.incorrect,
+            alpha = 0.4, color = "#969696")+
   geom_text(data = ages.comparison.phy, aes(x = 2.05, y = 2.22,
-                                label = paste0("Correct estimation:", " ",
-                             round(n/10),"%")),
+                       label = paste0("Error rate:", " ",
+                             error,"%")),
             inherit.aes = FALSE,
             size = 3, 
             family = "serif")+
@@ -373,21 +497,110 @@ f2 <-ggplot(ages.mean, aes(x = status, y = log(mean.phy +1), group = tree,
                                         intermediate = "Intermediate extinction",
                                         high = "High extinction")))+
   theme_bw()+
-  ylab("log(Phylogenetic age + 1)")+
+  ylab("log(Phylogenetic age)")+
   xlab(NULL)+
   mynamestheme+
   theme(legend.position = "none")
   
-####Mean geometric age plot
+####Mean point estimate probabilistic function
 
-f3 <-ggplot(ages.mean, aes(x = status, y = log(mean.mean +1), group = tree,
+##low extinction
+##correct estimation 
+mean.low.correct <- ages.rank %>% filter(extinction == "low") %>%
+  group_by(tree) %>% 
+  summarise(sum_mean = sum(resp_mean, na.rm = TRUE)) %>% 
+  filter(sum_mean == 5) %>%
+  pull(tree)
+
+mean.low.correct <- sample(mean.low.correct, 
+                          size = round(length(mean.low.correct)*0.1))
+
+
+##incorrect estimation 
+mean.low.incorrect <- ages.rank %>% filter(extinction == "low") %>%
+  group_by(tree) %>% 
+  summarise(sum_mean = sum(resp_mean, na.rm = TRUE)) %>% 
+  filter(sum_mean < 5) %>%
+  pull(tree)
+
+mean.low.incorrect <- sample(mean.low.incorrect,
+                            size = round(length(mean.low.incorrect)*0.1))
+
+
+##int extinction
+
+##correct estimation 
+mean.int.correct <- ages.rank %>% filter(extinction == "intermediate") %>%
+  group_by(tree) %>% 
+  summarise(sum_mean = sum(resp_mean, na.rm = TRUE)) %>% 
+  filter(sum_mean == 5) %>%
+  pull(tree)
+
+mean.int.correct <- sample(mean.int.correct, 
+                          size = round(length(mean.int.correct)*0.1))
+
+
+##incorrect estimation 
+mean.int.incorrect <- ages.rank %>% filter(extinction == "intermediate") %>%
+  group_by(tree) %>% 
+  summarise(sum_mean = sum(resp_mean, na.rm = TRUE)) %>% 
+  filter(sum_mean < 5) %>%
+  pull(tree)
+
+mean.int.incorrect <- sample(mean.int.incorrect,
+                            size = round(length(mean.int.incorrect)*0.1))
+
+##high extinction
+
+##correct estimation 
+mean.high.correct <- ages.rank %>% filter(extinction == "high") %>%
+  group_by(tree) %>% 
+  summarise(sum_mean = sum(resp_mean, na.rm = TRUE)) %>% 
+  filter(sum_mean == 5) %>%
+  pull(tree)
+
+mean.high.correct <- sample(mean.high.correct, 
+                           size = round(length(mean.high.correct)*0.1))
+
+
+##incorrect estimation 
+mean.high.incorrect <- ages.rank %>% filter(extinction == "high") %>%
+  group_by(tree) %>% 
+  summarise(sum_mean = sum(resp_mean, na.rm = TRUE)) %>% 
+  filter(sum_mean < 5) %>%
+  pull(tree)
+
+mean.high.incorrect <- sample(mean.high.incorrect,
+                             size = round(length(mean.high.incorrect)*0.1))
+
+##binding correct
+mean.correct <- c(mean.low.correct, mean.int.correct, mean.high.correct)
+
+##filtering correct dataset
+ages.mean.correct <- ages.mean %>% filter(tree %in% mean.correct)
+
+##binding incorrect
+mean.incorrect <- c(mean.low.incorrect, mean.int.incorrect, mean.high.incorrect)
+
+##filtering incorrect dataset
+ages.mean.incorrect <- ages.mean %>% filter(tree %in% mean.incorrect)
+
+
+##plot
+fprob <-ggplot(ages.mean.correct,
+                 aes(x = status, y = log(mean.mean +1), group = tree,
                            colour = extinction))+
   scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
   geom_point(size=3, shape=21, fill="white")+
-  geom_line(alpha = 0.1)+
-  geom_text(data = ages.comparison.mean, aes(x = 2.05, y = 3,
-                                             label = paste0("Correct estimation:", " ",
-                                                            round(n/10),"%")),
+  geom_line(alpha = 0.3)+
+  geom_point(data = ages.mean.incorrect,
+             size=3, shape = 21, fill="white",
+             alpha = 0.4, color = "#969696")+
+  geom_line(data = ages.mean.incorrect,
+            alpha = 0.4, color = "#969696")+
+  geom_text(data = ages.comparison.mean, aes(x = 2.05, y = 1.7,
+                                 label = paste0("Error rate:", " ",
+                                                        error,"%")),
             inherit.aes = FALSE,
             size = 3, 
             family = "serif")+
@@ -396,7 +609,7 @@ f3 <-ggplot(ages.mean, aes(x = status, y = log(mean.mean +1), group = tree,
                                       intermediate = "Intermediate extinction",
                                       high = "High extinction")))+
   theme_bw()+
-  ylab("log(Mean probable age + 1)")+
+  ylab("log(Mean Probable age)")+
   xlab(NULL)+
   mynamestheme+
   theme(legend.position = "none")
@@ -404,7 +617,7 @@ f3 <-ggplot(ages.mean, aes(x = status, y = log(mean.mean +1), group = tree,
 
 
 ###png object
-png("text/figures/Figure7.true.phylo.mean.phy.png", 
+png("text/figures/Figure.c_status.png", 
     width = 17, height = 17,
     units = "cm", 
     pointsize = 8, res = 300)
@@ -414,140 +627,7 @@ bottom <- text_grob("Conservation status",
                     family = "serif", size = 13,  face = "bold")
 
 ##grid for plotting both figures
-grid.arrange(f1, f2, f3, nrow = 3, bottom= bottom)
+grid.arrange(ftrue, fphylo, fprob, nrow = 3, bottom= bottom)
 
 dev.off()
 
-
-##############highest probabiltiy age
-png("text/figures/Figure10.1.line.true.vs.mode.png", 
-    width = 17, height = 15,
-    units = "cm", 
-    pointsize = 8, res = 300)
-
-
-##mean true age
-f1 <-ggplot(ages.mean, aes(x = status, y = log(mean.true +1), group = tree,
-                           color = extinction))+
-  scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
-  geom_point(size=3, shape=21, fill="white")+
-  geom_line(alpha = 0.1)+
-  facet_wrap(~extinction,
-             labeller = as_labeller(c(low = "Low extinction",
-                                      intermediate = "Intermediate extinction",
-                                      high = "High extinction")))+
-  theme_bw()+
-  ylab("log(True age + 1)")+
-  xlab(NULL)+
-  mynamestheme+
-  theme(legend.position = "none")
-  
-
-
-##mean mode age
-f2 <-ggplot(ages.mean, aes(x = status, y = log(mean.mode +1), group = tree,
-                           colour = extinction))+
-  scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
-  geom_point(size=3, shape=21, fill="white")+
-  geom_line(alpha = 0.1)+
-  geom_text(data = ages.comparison.mode, aes(x = 2.05, y = 2.22,
-                                  label = paste0("Correct estimation:", " ",
-                                                         round(n/10),"%")),
-            inherit.aes = FALSE,
-            size = 3, 
-            family = "serif")+
-  facet_wrap(~extinction,
-             labeller = as_labeller(c(low = "Low extinction",
-                                      intermediate = "Intermediate extinction",
-                                      high = "High extinction")))+
-  theme_bw()+
-  ylab("log(Most probable age + 1)")+
-  xlab(NULL)+
-  mynamestheme+
-  theme(legend.position = "none")
-
-##setting top
-top <- text_grob("Positive effect",
-                 family = "serif", size = 13,  face = "bold")
-
-##bottom
-bottom <- text_grob("Conservation status",
-                    family = "serif", size = 13,  face = "bold")
-
-##grid for plotting both figures
-grid.arrange(f1, f2, nrow = 2, top = top, bottom= bottom)
-
-dev.off()
-
-#########mean probability age
-png("text/figures/Figure10.2.line.true.vs.mean.png", 
-    width = 17, height = 15,
-    units = "cm", 
-    pointsize = 8, res = 300)
-
-
-##mean true age
-f1 <-ggplot(ages.mean, aes(x = status, y = log(mean.true +1), group = tree,
-                           color = extinction))+
-  scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
-  geom_point(size=3, shape=21, fill="white")+
-  geom_line(alpha = 0.1)+
-  facet_wrap(~extinction,
-             labeller = as_labeller(c(low = "Low extinction",
-                                      intermediate = "Intermediate extinction",
-                                      high = "High extinction")))+
-  theme_bw()+
-  ylab("log(True age + 1)")+
-  xlab(NULL)+
-  mynamestheme+
-  theme(legend.position = "none")
-  
-
-
-##mean mean age
-f2 <-ggplot(ages.mean, aes(x = status, y = log(mean.mean +1), group = tree,
-                           colour = extinction))+
-  scale_color_manual(values = c("#7fc97f","#beaed4","#fdc086"))+
-  geom_point(size=3, shape=21, fill="white")+
-  geom_line(alpha = 0.1)+
-  geom_text(data = ages.comparison.mean, aes(x = 2.05, y = 3,
-                                    label = paste0("Correct estimation:", " ",
-                                                           round(n/10),"%")),
-            inherit.aes = FALSE,
-            size = 3, 
-            family = "serif")+
-  facet_wrap(~extinction,
-             labeller = as_labeller(c(low = "Low extinction",
-                                      intermediate = "Intermediate extinction",
-                                      high = "High extinction")))+
-  theme_bw()+
-  ylab("log(Mean probable age + 1)")+
-  xlab(NULL)+
-  mynamestheme+
-  theme(legend.position = "none")
-  
-
-##setting top
-top <- text_grob("Positive effect",
-                 family = "serif", size = 13,  face = "bold")
-
-##bottom
-bottom <- text_grob("Conservation status",
-                    family = "serif", size = 13,  face = "bold")
-
-##grid for plotting both figures
-grid.arrange(f1, f2, nrow = 2, top = top, bottom= bottom)
-
-dev.off()
-
-
-
-
-
-                                                         
-
-
-
-
-
-  
