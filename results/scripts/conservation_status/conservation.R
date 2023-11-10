@@ -144,8 +144,12 @@ for(i in 1:nrow(ages.high)){
 
 
 ##mean age
-high.mean.age <- as.vector(do.call("rbind",
-                     lapply(high.list, function(x) sum(x$time * x$prob))))
+high.mean.age <- sapply(high.list, function(x) sum(x$time * x$prob))
+
+##median age
+high.median.age <- sapply(high.list, function(x)
+                        weighted.median(x = x$time,
+                              w = x$prob))
 
 
 ##confidence interval
@@ -158,9 +162,10 @@ upr.high <- sapply(high.list, function(x) weighted.quantile(x$time, x$prob,
                                                            0.975))
 
 ##joining dataframes
-ages.high.bif <- cbind(ages.high, high.mean.age,
+ages.high.bif <- cbind(ages.high, high.mean.age, high.median.age,
                              lwr.high, upr.high) %>% 
                     rename(mean_age = high.mean.age,
+                           median_age = high.median.age,
                            lwr.ci = lwr.high,
                            upr.ci = upr.high)
 
@@ -233,6 +238,7 @@ ages.total.bif$extinction <- factor(ages.total.bif$extinction,
 ##saving
 write_csv(ages.total.bif, file = file.path(pro, c_status, "ages.total.bif.csv"))
 
+ages.total.bif <- read_csv(file = file.path(pro, c_status, "ages.total.bif.csv"))
 # simulating the extinction signal -----------------------------------------
 
 ####high extinction
@@ -317,8 +323,17 @@ ages.mean <-ages.total%>%
                  group_by(extinction, tree, status) %>%
                  summarise(mean.true = mean(True.age),
                            mean.phy = mean(Estimated.age),
-                           mean.mean = mean(mean_age)) 
+                           mean.mean = mean(mean_age),
+                           mean.median = mean(median_age)) 
 
+##factors
+ages.mean$status <- factor(ages.mean$status,
+                           levels = c("LC", "NT", "VU", "EN", "CR"),
+                           ordered = TRUE)
+
+ages.mean$extinction <- factor(ages.mean$extinction,
+                               levels = c("low", "intermediate", "high"),
+                               ordered = TRUE)
 ##renaming tree for grouping
 ages.mean$tree <- paste0(ages.mean$tree, ".", 
                               ages.mean$extinction)
@@ -327,9 +342,11 @@ ages.mean$tree <- paste0(ages.mean$tree, ".",
 ages.rank <- ages.mean %>% group_by(tree, extinction) %>%
                      mutate(true.rank = dense_rank(mean.true),
                          phy.rank = dense_rank(mean.phy),
-                         mean.rank = dense_rank(mean.mean)) %>% 
+                         mean.rank = dense_rank(mean.mean),
+                         median.rank = dense_rank(mean.median)) %>% 
                       mutate(resp_phy = if_else(true.rank == phy.rank, 1, 0),
-                         resp_mean = if_else(true.rank == mean.rank, 1, 0)) 
+                         resp_mean = if_else(true.rank == mean.rank, 1, 0),
+                         resp_median = if_else(true.rank == median.rank, 1,0)) 
   
   
   ###comparing phylogenetic age
@@ -347,7 +364,12 @@ ages.comparison.mean <- ages.rank %>% group_by(extinction, tree) %>%
   count()%>% 
   mutate(error = n/1000*100)
 
-
+###comparing median estimation from the probabilistic function
+ages.comparison.median <- ages.rank %>% group_by(extinction, tree) %>% 
+  summarise(sum_median = sum(resp_median)) %>% 
+  filter(sum_median < 5) %>% 
+  count()%>% 
+  mutate(error = n/1000*100)
 
 ###true age plot
 
@@ -386,7 +408,7 @@ ftrue <- ages.mean %>% filter(tree %in% trees.true) %>%
                                             intermediate = "Intermediate extinction",
                                                      high = "High extinction")))+
           theme_bw()+
-          ylab("log(True age)")+
+          ylab("True age (log)")+
           xlab(NULL)+
           mynamestheme+
           theme(legend.position = "none")
@@ -497,7 +519,7 @@ fphylo <-ggplot(ages.phy.correct, aes(x = status, y = log(mean.phy +1), group = 
                                         intermediate = "Intermediate extinction",
                                         high = "High extinction")))+
   theme_bw()+
-  ylab("log(Phylogenetic age)")+
+  ylab("Phylogenetic age (log)")+
   xlab(NULL)+
   mynamestheme+
   theme(legend.position = "none")
@@ -609,7 +631,7 @@ fprob <-ggplot(ages.mean.correct,
                                       intermediate = "Intermediate extinction",
                                       high = "High extinction")))+
   theme_bw()+
-  ylab("log(Mean Probable age)")+
+  ylab("Corrected age (log)")+
   xlab(NULL)+
   mynamestheme+
   theme(legend.position = "none")
