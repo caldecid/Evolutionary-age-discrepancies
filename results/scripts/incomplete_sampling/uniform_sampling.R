@@ -351,9 +351,9 @@ mynamestheme <- theme(strip.text = element_text(family = "serif", size = (9)),
                       legend.title = element_text(family = "serif", size = (11),
                                                   face = "bold"),
                       legend.text = element_text(family = "serif", size = (10)),
-                      legend.background = element_rect(fill = "gray90",
-                                               size = 0.5, linetype = "dotted"),
-                      legend.position = "bottom")
+                      legend.position = c(0.13, 0.8),
+                      legend.background = element_rect(fill="#ffffffaa",
+                                             size=.3, linetype="dotted"))
 
 ###bifurcating 0% incomplete sampling
 ages.average.0.bif <- ages.0.bif %>% group_by(tree) %>% 
@@ -461,7 +461,7 @@ ggplot(ages.mape, aes(y = mape, x = estimate, fill = estimate))+
                      labels=c("0%", "25%",
                               "50%"))+
   ylim(0, 1000)+
-  ylab("MAPE (%)")+
+  ylab("MAPE")+
   xlab(NULL)+
   theme_bw()+
   mynamestheme+

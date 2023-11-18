@@ -1,11 +1,9 @@
-
-# Quantifying the error, distinct lambdas ---------------------------------
+# Quantifying the error. Figure 3 and 4 -----------------------------------
 
 ##sourcing the libraries and the directories
 source(file.path(getwd(), "/source.R"))
 
 ###calling lambda speciation data set
-
 q.error.lam <- read_csv(file = file.path(getwd(), 
                                          pro, q_error, "q.error.lambda.csv"))
 
@@ -42,7 +40,6 @@ write_csv(error.quantification, file = file.path(getwd(), pro, q_error,
 
 ##Figure faceting True age vs Phylogenetic age by budding and bifurcating 
 
-
 ##defining fonts, faces and sizes for all the graphics
 
 #themes
@@ -50,43 +47,15 @@ mynamestheme <- theme(strip.text = element_text(family = "serif", size = (11)),
                       axis.title = element_text(family = "serif", size = (12),
                                                 face = "bold"),
                       axis.text = element_text(family = "serif", size = (9)),
-                      legend.title = element_text(family = "serif", size = (11),
+                      legend.title = element_text(family = "serif", size = (9),
                                                   face = "bold"),
-                      legend.text = element_text(family = "serif", size = (10)),
-                      legend.position = "bottom",
-                      legend.background = element_rect(fill="gray90",
-                                                size=.5, linetype="dotted"))
+                      legend.text = element_text(family = "serif", size = (9)),
+                      legend.position = c(0.1, 0.8),
+                      legend.background = element_rect(fill="#ffffffaa",
+                                                size=.3, linetype="dotted"))
 
 # scaled ages -------------------------------------------------------------
 
-##Figure 1. True vs Phylogenetic age
-##png object
-png("text/figures/Figure1.scale.True.vs.Phylo.png", width = 17, height = 15, units = "cm", 
-    pointsize = 8, res = 300)
-##main
-scale.True.Phylo <- q.error.scale %>% filter(speciation %in% 
-                                               c("Bifurcating", "Budding")) %>% 
-  slice(sample(1:n())) %>%
-  mutate(turnover_bin = cut_interval(turnover,3)) %>% 
-  ggplot(aes(rTrue.age, rEstimated.age, turnover_bin))+
-  geom_point(alpha = 0.3, aes(color = turnover_bin))+
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed")+
-  xlim(0,1)+
-  ylim(0,1)+
-  xlab("True age (scaled)")+
-  ylab("Phylogenetic age (scaled)")+
-  scale_color_manual(values = c("#1b9e77", "#d95f02", "#7570b3"),
-                     name="Turnover",
-                     breaks=c("[0,0.33]", "(0.33,0.66]", "(0.66,0.99]"),
-                     labels=c("Low [0-0.33]", "Intermediate (0.33-0.66]",
-                              "High (0.66-0.99]"))+
-  facet_wrap(~speciation)+
-  theme_bw()
-
-
-scale.True.Phylo + mynamestheme
-
-dev.off()
 
 
 # fig 3 scale true vs phylo without intermediate turnover -----------------
@@ -121,32 +90,6 @@ scale.turnover + mynamestheme
 dev.off()
 
 ####anagenetic True vs phylogenetic
-png("text/supplementary/SM.Fig1.scale.True.vs.phylogenetic.png", width = 17,
-    height = 12, units = "cm", 
-    pointsize = 8, res = 300)
-##main
-scale.true.phy.ana <- q.error.scale %>% filter(speciation %in% 
-                       c("Anagenetic-budding", "Anagenetic-bifurcating")) %>% 
-  slice(sample(1:n())) %>% 
-  mutate(turnover_bin = cut_interval(turnover,3)) %>% 
-  ggplot(aes(rTrue.age, rEstimated.age, turnover_bin))+
-  geom_point(alpha = 0.5, aes(color = turnover_bin))+
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed")+
-  xlim(0,1)+
-  ylim(0,1)+
-  xlab("True age (scaled)")+
-  ylab("Phylogenetic age (scaled)")+
-  scale_color_manual(values = c("#1b9e77", "#d95f02", "#7570b3"),
-                     name="Turnover",
-                     breaks=c("[0,0.33]", "(0.33,0.66]", "(0.66,0.99]"),
-                     labels=c("Low [0-0.33]", "Intermediate (0.33-0.66]",
-                              "High (0.66-0.99]"))+
-  facet_wrap(~speciation)+
-  theme_bw()
-
-scale.true.phy.ana + mynamestheme
-
-dev.off()
 
 ##SM Figure True vs Phylo anagenetic without intermediate turnover
 
@@ -201,8 +144,8 @@ mape.turn <- ggplot(q.ext.bud.bif, aes(x = turnover, y = mape))+
   geom_point(alpha = 0.8, aes(color = lambda))+
   scale_color_discrete("Speciation rates")+
   facet_wrap(~speciation)+
-  xlab("Turnover")+
-  ylab("MAPE (%)")+
+  xlab("Extinction fraction")+
+  ylab("MAPE")+
   theme_bw()
 
 mape.turn + mynamestheme
