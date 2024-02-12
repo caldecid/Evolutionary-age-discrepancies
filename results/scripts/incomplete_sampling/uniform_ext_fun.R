@@ -1164,7 +1164,10 @@ dev.off()
 
 ##Fully sampled
 
-full.plot <- ages.mape.sampling.tot %>% filter(fraction == "full") %>% 
+full.plot <- ages.mape.sampling.tot %>% filter(fraction == "full",
+                                               estimate %in% c("mape.incomplete",
+                                                               "mape.mean.new",
+                                                               "mape.median.new")) %>% 
          ggplot(aes(y = mape, x = estimate,
                                           fill = estimate))+
           geom_boxplot(outlier.shape = NA)+
@@ -1174,12 +1177,12 @@ full.plot <- ages.mape.sampling.tot %>% filter(fraction == "full") %>%
                                             "intermediate" = "Intermediate extinction",
                                             "high" = "High extinction",
                                             "full" = "Fully sampled")))+
-        scale_fill_manual(values = c("#1b9e77", "#d95f02", "#7570b3", "blue", "skyblue"),
+        scale_fill_manual(values = c("#1b9e77", "#d95f02", "#7570b3"),
                           name="Estimation",
-                          breaks=c("mape.incomplete", "mape.mean", "mape.median",
-                                   "mape.mean.new", "mape.median.new"),
+                          breaks=c("mape.incomplete", "mape.mean.new",
+                                   "mape.median.new"),
                           labels=c("Phylogenetic", "Mean",
-                                   "Median", "Mean.new", "Median.new"))+
+                                   "Median"))+
         ylim(0, 130)+
         ylab(NULL)+
         xlab(NULL)+
@@ -1191,7 +1194,10 @@ full.plot <- ages.mape.sampling.tot %>% filter(fraction == "full") %>%
 
 #### 25% missing species
 
-f25.plot <- ages.mape.sampling.tot %>% filter(fraction == "0.25") %>% 
+f25.plot <- ages.mape.sampling.tot %>% filter(fraction == "0.25",
+                                              estimate %in% c("mape.incomplete",
+                                                           "mape.mean.new",
+                                                         "mape.median.new")) %>% 
   ggplot(aes(y = mape, x = estimate,
              fill = estimate))+
   geom_boxplot(outlier.shape = NA)+
@@ -1200,12 +1206,12 @@ f25.plot <- ages.mape.sampling.tot %>% filter(fraction == "0.25") %>%
                                       "intermediate" = "Intermediate extinction",
                                       "high" = "High extinction",
                                       "0.25" = "25% missing species")))+
-  scale_fill_manual(values = c("#1b9e77", "#d95f02", "#7570b3", "blue", "skyblue"),
+  scale_fill_manual(values = c("#1b9e77", "#d95f02", "#7570b3"),
                     name="Estimation",
-                    breaks=c("mape.incomplete", "mape.mean", "mape.median",
+                    breaks=c("mape.incomplete",
                              "mape.mean.new", "mape.median.new"),
                     labels=c("Phylogenetic", "Mean",
-                             "Median", "Mean.new", "Median.new"))+
+                             "Median"))+
   ylim(0, 350)+
   ylab(NULL)+
   xlab(NULL)+
@@ -1216,7 +1222,10 @@ f25.plot <- ages.mape.sampling.tot %>% filter(fraction == "0.25") %>%
 
 #### 50% missing species
 
-f50.plot <- ages.mape.sampling.tot %>% filter(fraction == "0.5") %>% 
+f50.plot <- ages.mape.sampling.tot %>% filter(fraction == "0.5",
+                                              estimate %in% c("mape.incomplete",
+                                                              "mape.mean.new",
+                                                         "mape.median.new")) %>% 
   ggplot(aes(y = mape, x = estimate,
              fill = estimate))+
   geom_boxplot(outlier.shape = NA)+
@@ -1225,12 +1234,12 @@ f50.plot <- ages.mape.sampling.tot %>% filter(fraction == "0.5") %>%
                                       "intermediate" = "Intermediate extinction",
                                       "high" = "High extinction",
                                       "0.5" = "50% missing species")))+
-  scale_fill_manual(values = c("#1b9e77", "#d95f02", "#7570b3", "blue", "skyblue"),
+  scale_fill_manual(values = c("#1b9e77", "#d95f02", "#7570b3"),
                     name="Estimation",
-                    breaks=c("mape.incomplete", "mape.mean", "mape.median",
+                    breaks=c("mape.incomplete", 
                              "mape.mean.new", "mape.median.new"),
                     labels=c("Phylogenetic", "Mean",
-                             "Median", "Mean.new", "Median.new"))+
+                             "Median"))+
   ylim(0, 1050)+
   ylab(NULL)+
   xlab(NULL)+
@@ -1241,7 +1250,7 @@ f50.plot <- ages.mape.sampling.tot %>% filter(fraction == "0.5") %>%
 
 
 ##plot grid
-png("text/figures/MAPE.new.function.png", 
+png("text/figures/MAPE.sampling.new.png", 
     width = 17, height = 20, units = "cm", 
     pointsize = 8, res = 300)
 
@@ -1279,7 +1288,9 @@ ages.delta$estimate <- factor(ages.delta$estimate,
 ##plots
 
 ##Fully sampled
-full.delta <- ages.delta %>% filter(fraction == "full") %>% 
+full.delta <- ages.delta %>% filter(fraction == "full",
+                                    estimate %in% c("delta.mean.new",
+                                                    "delta.median.new")) %>% 
       ggplot(aes(y = delta, x = estimate,
                  fill = estimate))+
         geom_boxplot(outlier.shape = NA)+
@@ -1290,14 +1301,12 @@ full.delta <- ages.delta %>% filter(fraction == "full") %>%
                                             "full" = "Fully sampled"
                                            )),
                    scale = "free_y")+
-        scale_fill_manual(values = c("#d8b365", "#5ab4ac", "blue", "skyblue"),
+        scale_fill_manual(values = c("#d8b365", "#5ab4ac"),
                           name="Estimation",
-                          breaks=c("delta.mean", "delta.median",
+                          breaks=c(
                                    "delta.mean.new", "delta.median.new"),
                           labels=c("Mean",
-                                   "Median",
-                                   "Mean.new",
-                                   "Median.new"))+
+                                   "Median"))+
         geom_hline(yintercept = 0, linetype = "dashed",
                    size = 1, colour = "red")+
         #ylab(expression(bold(Delta* "MAPE")))+
@@ -1311,7 +1320,9 @@ full.delta <- ages.delta %>% filter(fraction == "full") %>%
 
 
 ##25% missing species
-f25.delta <- ages.delta %>% filter(fraction == "0.25") %>% 
+f25.delta <- ages.delta %>% filter(fraction == "0.25",
+                                   estimate %in% c("delta.mean.new",
+                                                   "delta.median.new")) %>% 
   ggplot(aes(y = delta, x = estimate,
              fill = estimate))+
   geom_boxplot(outlier.shape = NA)+
@@ -1321,12 +1332,10 @@ f25.delta <- ages.delta %>% filter(fraction == "0.25") %>%
                                       "high" = "High extinction",
                                       "0.25" = "25% missing species"
              )))+
-  scale_fill_manual(values = c("#d8b365", "#5ab4ac", "blue", "skyblue"),
+  scale_fill_manual(values = c("#d8b365", "#5ab4ac"),
                     name="Estimation",
-                    breaks=c("delta.mean", "delta.median",
-                             "delta.mean.new", "delta.median.new"),
-                    labels=c("Mean",
-                             "Median",
+                    breaks=c("delta.mean.new", "delta.median.new"),
+                    labels=c(
                              "Mean.new",
                              "Median.new"))+
   geom_hline(yintercept = 0, linetype = "dashed",
@@ -1341,7 +1350,9 @@ f25.delta <- ages.delta %>% filter(fraction == "0.25") %>%
         legend.position = "none")
 
 ##50% missing species
-f50.delta <- ages.delta %>% filter(fraction == "0.5") %>% 
+f50.delta <- ages.delta %>% filter(fraction == "0.5",
+                                   estimate %in% c("delta.mean.new",
+                                                   "delta.median.new")) %>% 
   ggplot(aes(y = delta, x = estimate,
              fill = estimate))+
   geom_boxplot(outlier.shape = NA)+
@@ -1351,14 +1362,12 @@ f50.delta <- ages.delta %>% filter(fraction == "0.5") %>%
                                       "high" = "High extinction",
                                       "0.5" = "50% missing species"
              )))+
-  scale_fill_manual(values = c("#d8b365", "#5ab4ac", "blue", "skyblue"),
+  scale_fill_manual(values = c("#d8b365", "#5ab4ac"),
                     name="Estimation",
-                    breaks=c("delta.mean", "delta.median",
+                    breaks=c(
                              "delta.mean.new", "delta.median.new"),
                     labels=c("Mean",
-                             "Median",
-                             "Mean.new",
-                             "Median.new"))+
+                             "Median"))+
   geom_hline(yintercept = 0, linetype = "dashed",
              size = 1, colour = "red")+
   #ylab(expression(bold(Delta* "MAPE")))+
@@ -1371,7 +1380,7 @@ f50.delta <- ages.delta %>% filter(fraction == "0.5") %>%
 
 ##plot grid
 
-png("text/figures/delta.MAPE.new.png", 
+png("text/figures/delta.MAPE.sampling.new.png", 
     width = 17, height = 20, units = "cm", 
     pointsize = 8, res = 300)
 
