@@ -31,6 +31,38 @@ ageFunction <- function(lambda, mu, rho, t, v) {
 }
 
 
+meanAgeFunction <- function(lambda, mu, rho, v) {
+  # get the integrated rate
+  integrated_rate <- integratedRate(lambda, mu, rho, 0, v)
+  # compute the probability of zero events 
+  p_no_events <- dpois(0, integrated_rate)
+  # compute the mean, given that the age is not v 
+  mean_with_events <- integrate(function(t) {
+    t * ageDensityFunction(lambda, mu, rho, t) }, lower = 0, upper = v)$value
+  # combine the probabilities
+  mean_age <- p_no_events * v + mean_with_events
+  return(mean_age) 
+}
+
+
+medianAgeFunction <- function(lambda, mu, rho, v) {
+  # get the integrated rate
+  integrated_rate <- integratedRate(lambda, mu, rho, 0, v)
+  # compute the probability of zero events 
+  p_no_events <- dpois(0, integrated_rate)
+  # compute the median by optimization 
+  median_age <- optim(par = v / 2, fn = function(t) {
+    # compute the probability older than t 
+    p <- integrate( function(s) {
+      ageDensityFunction(lambda, mu, rho, s) 
+    }, lower = t, upper = v)$value + p_no_events
+    # compute the distance from the median 
+    return(abs(p - 0.5))
+  }, lower = 0, upper = v, method = "Brent")$par
+  return(median_age) 
+}
+
+
 # SIM
 forwardSimulate <- function(lambda, mu, rho, time) {
   # repeat until we get one extant lineage 
@@ -86,41 +118,4 @@ forwardSimulate <- function(lambda, mu, rho, time) {
   }
   # done with simulation 
   return(species$start[species$status == "alive"])
-}
-
-
-
-meanAgeFunction <- function(lambda, mu, rho, v) {
-  
-  # get the integrated rate
-  integrated_rate <- integratedRate(lambda, mu, rho, 0, v)
-  # compute the probability of zero events
-  p_no_events <- dpois(0, integrated_rate)
-  # compute the mean, given that the age is not v
-  mean_with_events <- integrate(function(t) {
-    t * ageDensityFunction(lambda, mu, rho, t)
-  }, lower = 0, upper = v)$value
-  # combine the probabilities
-  mean_age <- p_no_events * v + mean_with_events
-  return(mean_age)
-}
-
-
-medianAgeFunction <- function(lambda, mu, rho, v) {
-  # get the integrated rate
-  integrated_rate <- integratedRate(lambda, mu, rho, 0, v)
-  # compute the probability of zero events
-  p_no_events <- dpois(0, integrated_rate)
-  # compute the median by optimization
-  median_age <- optim(par = v / 2, fn = function(t) {
-    # compute the probability older than t
-    p <- integrate( function(s) {
-      ageDensityFunction(lambda, mu, rho, s)
-    }, lower = t, upper = v)$value + p_no_events
-    # compute the distance from the median
-    return(abs(p - 0.5))
-  }, lower = 0, upper = v, method = "Brent")$par
-  return(median_age)
-    
-    
 }

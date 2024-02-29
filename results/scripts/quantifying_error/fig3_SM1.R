@@ -48,10 +48,11 @@ prob.error <- q.error.scale %>%
                                round(estimation, 10) == 0 ~ "Correct_estimation",
                                estimation < 0 ~ "Underestimation"))
 
-y$direction = factor(y$direction, levels = c("Underestimation",
+prob.error$direction = factor(prob.error$direction, 
+                                   levels = c("Underestimation",
                                              "Correct_estimation",
                                              "Overestimation"),
-                     ordered = TRUE)
+                                       ordered = TRUE)
 
 
 ##Figure faceting True age vs Phylogenetic age by budding and bifurcating 
@@ -117,7 +118,7 @@ prop.est.bif.bud <- prob.error %>% group_by(speciation,turnover_bin, direction) 
   facet_wrap(~speciation)+
   scale_y_continuous(labels = percent_format(), limits=c(0,1))+
   scale_fill_manual(values = c("#d95f02", "#7570b3"),
-                    name="Turnover",
+                    name="Extinction fraction",
                     breaks=c("[0,0.25]", "(0.75,1]"),
                     labels=c("Low [0-0.25]",
                              "High (0.75-0.99]"))+
@@ -184,7 +185,7 @@ prop.est.ana <- prob.error %>% group_by(speciation,turnover_bin, direction) %>%
   facet_wrap(~speciation)+
   scale_y_continuous(labels = percent_format(), limits=c(0,1))+
   scale_fill_manual(values = c("#d95f02", "#7570b3"),
-                    name="Turnover",
+                    name="Extinction fraction",
                     breaks=c("[0,0.25]", "(0.75,1]"),
                     labels=c("Low [0-0.25]",
                              "High (0.75-0.99]"))+

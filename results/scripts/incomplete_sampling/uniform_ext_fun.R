@@ -131,30 +131,13 @@ ages_incomplete_no <- rbind(ages.bif.incomp.25, ages.bif.incomp.50)
 write_csv(ages_incomplete_no, file = 
             "results/data/processed/incomplete_sampling/ages.incomplete.no.ex.csv")
 
+##read
+ages_incomplete_no <- read_csv("results/data/processed/incomplete_sampling/ages.incomplete.no.ex.csv")
 
 # Probabilistic function --------------------------------------------------
 
 ###for 25% incomplete sampling
 ages.incomplete_no.f25 <- ages_incomplete_no %>% filter(fraction == "0.25")
-
-##correcting using the exact rho
-
-f25_no.list <- list()
-
-for(i in 1:nrow(ages.incomplete_no.f25)){
-  f25_no.list[[i]] <- get_sp_age_prob_new(lam = 0.3,
-                                       mu = 0,
-                                       node_age = ages.incomplete_no.f25$Incomp.age[i],
-                                       rho = 0.75)
-}
-
-##mean age
-f25_no.mean.age <- sapply(f25_no.list, function(x) sum(x$time * x$prob))
-
-##median age
-f25_no.median.age <- sapply(f25_no.list, function(x)
-                              weighted.median(x = x$time,
-                                              w = x$prob))
 
 ##trying new function provided by the reviewer
 
@@ -182,13 +165,10 @@ for(i in 1:nrow(ages.incomplete_no.f25)){
 
 ##binding columns
 ages.f25_no <- cbind(ages.incomplete_no.f25,
-                     f25_no.mean.age, f25_no.median.age,
                      f25_mean_new,
                      f25_median_new) %>% 
-  rename(mean.age = f25_no.mean.age,
-         median.age = f25_no.median.age,
-         mean.age.new = f25_mean_new,
-         median.age.new = f25_median_new)
+  rename(mean.age = f25_mean_new,
+         median.age = f25_median_new)
 
 
 
@@ -196,26 +176,7 @@ ages.f25_no <- cbind(ages.incomplete_no.f25,
 
 ages.incomplete_no.f50 <- ages_incomplete_no %>% filter(fraction == "0.5")
 
-##correcting using the exact rho
-
-f50_no.list <- list()
-
-for(i in 1:nrow(ages.incomplete_no.f50)){
-  f50_no.list[[i]] <- get_sp_age_prob_new(lam = 0.3,
-                                          mu = 0,
-                                          node_age = ages.incomplete_no.f50$Incomp.age[i],
-                                          rho = 0.50)
-}
-
-##mean age
-f50_no.mean.age <- sapply(f50_no.list, function(x) sum(x$time * x$prob))
-
-##median age
-f50_no.median.age <- sapply(f50_no.list, function(x)
-  weighted.median(x = x$time,
-                  w = x$prob))
-
-##trying new function provided by the reviewer
+## new function provided by the reviewer
 
 ###mean age
 f50_mean_new <- vector(mode = "numeric", length = nrow(ages.incomplete_no.f50))
@@ -241,25 +202,19 @@ for(i in 1:nrow(ages.incomplete_no.f50)){
 
 ##binding columns
 ages.f50_no <- cbind(ages.incomplete_no.f50,
-                     f50_no.mean.age, f50_no.median.age,
                      f50_mean_new,
                      f50_median_new) %>% 
-  rename(mean.age = f50_no.mean.age,
-         median.age = f50_no.median.age,
-         mean.age.new = f50_mean_new,
-         median.age.new = f50_median_new)
+  rename(mean.age = f50_mean_new,
+         median.age = f50_median_new)
 
 
 ages.random_no_ext <- rbind(ages.f25_no, ages.f50_no)
 
-#######trying new function provided by the reviewer
-
-
-
+###saving
 write_csv(ages.random_no_ext,
       file = "results/data/processed/incomplete_sampling/ages.random_no_ext.csv")
 
-ages.random_no_ext <- read_csv("results/data/processed/incomplete_sampling/ages.random_no_ext.csv")
+#ages.random_no_ext <- read_csv("results/data/processed/incomplete_sampling/ages.random_no_ext.csv")
 
 ###calculating MAPE
 
@@ -269,11 +224,7 @@ ages.mape.no_ext <- ages.random_no_ext %>% group_by(fraction, tree) %>%
             mape.mean = 
               mean(abs(True.age - mean.age)/True.age)*100,
             mape.median = 
-              mean(abs(True.age - median.age)/True.age)*100,
-            mape.mean.new = 
-              mean(abs(True.age - mean.age.new)/True.age)*100,
-            mape.median.new =
-              mean(abs(True.age - median.age.new)/True.age)*100)
+              mean(abs(True.age - median.age)/True.age)*100)
 
 
 ages.mape.no_ext$extinction <- "no_ext"
@@ -288,9 +239,7 @@ ages.mape.sampling_no <- ages.mape.no_ext %>%
 ages.mape.sampling_no$estimate <- factor(ages.mape.sampling_no$estimate,
                                           levels = c("mape.incomplete",
                                                      "mape.mean",
-                                                     "mape.median",
-                                                     "mape.mean.new",
-                                                     "mape.median.new"),
+                                                     "mape.median"),
                                           ordered = TRUE)
 
 # Intermediate extinction -------------------------------------------------
@@ -416,26 +365,7 @@ ages.bif.incomp.50$speciation <- rep("bif", nrow(ages.bif.incomp.50))
 ages_incomplete_int <- rbind(ages.bif.incomp.25, ages.bif.incomp.50)
 
 
-##correcting using the exact rho
-
-f25.list <- list()
-
-for(i in 1:nrow(ages.bif.incomp.25)){
-  f25.list[[i]] <- get_sp_age_prob_new(lam = 0.3,
-                                       mu = 0.15,
-                                       node_age = ages.bif.incomp.25$Incomp.age[i],
-                                       rho = 0.75)
-}
-
-##mean age
-f25.mean.age <- sapply(f25.list, function(x) sum(x$time * x$prob))
-
-##median age
-f25.median.age <- sapply(f25.list, function(x)
-  weighted.median(x = x$time,
-                  w = x$prob))
-
-###testing new funciton provided by the reviewer
+### new funciton provided by the reviewer
 
 #mean
 
@@ -461,34 +391,15 @@ for(i in 1:nrow(ages.bif.incomp.25)){
 }
 
 ##binding columns
-ages.f25 <- cbind(ages.bif.incomp.25, f25.mean.age, f25.median.age,
-                  f25.mean.age.new, f25.median.age.new) %>% 
-  rename(mean.age = f25.mean.age,
-         median.age = f25.median.age,
-         mean.age.new = f25.mean.age.new,
-         median.age.new = f25.median.age.new)
+ages.f25 <- cbind(ages.bif.incomp.25, f25.mean.age.new,
+                  f25.median.age.new) %>% 
+  rename(mean.age = f25.mean.age.new,
+         median.age = f25.median.age.new)
 
 
 
 ## 50% sampling
 
-##correcting
-f50.list <- list()
-
-for(i in 1:nrow(ages.bif.incomp.50)){
-  f50.list[[i]] <- get_sp_age_prob_new(lam = 0.3,
-                                       mu = 0.15,
-                                       node_age =ages.bif.incomp.50$Incomp.age[i],
-                                       rho = 0.50)
-}
-
-##mean age
-f50.mean.age <- sapply(f50.list, function(x) sum(x$time * x$prob))
-
-##median age
-f50.median.age <- sapply(f50.list, function(x)
-  weighted.median(x = x$time,
-                  w = x$prob))
 
 ##new function provided by the reviewer
 #mean
@@ -516,12 +427,10 @@ for(i in 1:nrow(ages.bif.incomp.50)){
 
 
 ##binding columns
-ages.f50 <- cbind(ages.bif.incomp.50, f50.mean.age, f50.median.age,
+ages.f50 <- cbind(ages.bif.incomp.50,
                   f50.mean.age.new, f50.median.age.new) %>% 
-  rename(mean.age = f50.mean.age,
-         median.age = f50.median.age,
-         mean.age.new = f50.mean.age.new,
-         median.age.new = f50.median.age.new)
+  rename(mean.age = f50.mean.age.new,
+         median.age = f50.median.age.new)
 
 
 ##binding dataframes
@@ -533,19 +442,16 @@ ages.random_int_ext$extinction <- "intermediate"
 write_csv(ages.random_int_ext,
          file = "results/data/processed/incomplete_sampling/ages.random_int_ext.csv")
 
-ages.random_int_ext <- read_csv(file = "results/data/processed/incomplete_sampling/ages.random_int_ext.csv")
+#ages.random_int_ext <- read_csv(file = "results/data/processed/incomplete_sampling/ages.random_int_ext.csv")
 
+##MAPE
 ages.mape.int <- ages.random_int_ext %>% group_by(fraction, tree) %>% 
   summarise(mape.incomplete = 
               mean(abs(True.age - Incomp.age)/True.age)*100,
             mape.mean = 
               mean(abs(True.age - mean.age)/True.age)*100,
             mape.median = 
-              mean(abs(True.age - median.age)/True.age)*100,
-            mape.mean.new = 
-              mean(abs(True.age - mean.age.new)/True.age)*100,
-            mape.median.new = 
-              mean(abs(True.age - median.age.new)/True.age)*100)
+              mean(abs(True.age - median.age)/True.age)*100)
 
 ages.mape.int$extinction <- "intermediate"
 
@@ -557,9 +463,7 @@ ages.mape.sampling_int <- ages.mape.int %>%
 ages.mape.sampling_int$estimate <- factor(ages.mape.sampling_int$estimate,
                                            levels = c("mape.incomplete",
                                                       "mape.mean",
-                                                      "mape.median",
-                                                      "mape.mean.new",
-                                                      "mape.median.new"),
+                                                      "mape.median"),
                                            ordered = TRUE)
 
 
@@ -690,28 +594,10 @@ ages_incomplete_high <- rbind(ages.bif.incomp.25, ages.bif.incomp.50)
 write_csv(ages_incomplete_high, file = 
             "results/data/processed/incomplete_sampling/ages.incomplete.high.ex.csv")
 
+#ages.incomplete_high <- read_csv("results/data/processed/incomplete_sampling/ages.incomplete.high.ex.csv")
 
 # Probabilistic function --------------------------------------------------
 
-
-##correcting using the exact rho
-
-f25_high.list <- list()
-
-for(i in 1:nrow(ages.bif.incomp.25)){
-  f25_high.list[[i]] <- get_sp_age_prob_new(lam = 0.3,
-                                          mu = 0.25,
-                              node_age = ages.bif.incomp.25$Incomp.age[i],
-                                          rho = 0.75)
-}
-
-##mean age
-f25_high.mean.age <- sapply(f25_high.list, function(x) sum(x$time * x$prob))
-
-##median age
-f25_high.median.age <- sapply(f25_high.list, function(x)
-  weighted.median(x = x$time,
-                  w = x$prob))
 
 ##new function provided by the reviewer
 #mean
@@ -740,35 +626,13 @@ for(i in 1:nrow(ages.bif.incomp.25)){
 
 ##binding columns
 ages.f25_high <- cbind(ages.bif.incomp.25,
-                     f25_high.mean.age, f25_high.median.age,
                      f25.mean.age.new, 
                      f25.median.age.new) %>% 
-  rename(mean.age = f25_high.mean.age,
-         median.age = f25_high.median.age,
-         mean.age.new = f25.mean.age.new,
-         median.age.new = f25.median.age.new)
+                  rename(mean.age = f25.mean.age.new,
+                         median.age = f25.median.age.new)
 
 
 # 50% missing species -----------------------------------------------------
-
-##correcting using the exact rho
-
-f50_high.list <- list()
-
-for(i in 1:nrow(ages.bif.incomp.50)){
-  f50_high.list[[i]] <- get_sp_age_prob_new(lam = 0.3,
-                                          mu = 0.25,
-                                          node_age = ages.bif.incomp.50$Incomp.age[i],
-                                          rho = 0.50)
-}
-
-##mean age
-f50_high.mean.age <- sapply(f50_high.list, function(x) sum(x$time * x$prob))
-
-##median age
-f50_high.median.age <- sapply(f50_high.list, function(x)
-  weighted.median(x = x$time,
-                  w = x$prob))
 
 ##new function provided by the reviewer
 
@@ -799,14 +663,10 @@ for(i in 1:nrow(ages.bif.incomp.50)){
 
 ##binding columns
 ages.f50_high <- cbind(ages.bif.incomp.50,
-                       f50_high.mean.age,
-                       f50_high.median.age,
-                     f50.mean.age.new,
+                       f50.mean.age.new,
                      f50.median.age.new) %>% 
-  rename(mean.age = f50_high.mean.age,
-         median.age = f50_high.median.age,
-         mean.age.new = f50.mean.age.new,
-         median.age.new = f50.median.age.new)
+                    rename(mean.age = f50.mean.age.new,
+                           median.age = f50.median.age.new)
 
 
 ages.random_high_ext <- rbind(ages.f25_high, ages.f50_high)
@@ -814,7 +674,7 @@ ages.random_high_ext <- rbind(ages.f25_high, ages.f50_high)
 write_csv(ages.random_high_ext,
           file = "results/data/processed/incomplete_sampling/ages.random_high_ext.csv")
 
-ages.random_high_ext <- read_csv(file = "results/data/processed/incomplete_sampling/ages.random_high_ext.csv")
+#ages.random_high_ext <- read_csv(file = "results/data/processed/incomplete_sampling/ages.random_high_ext.csv")
 
 ###calculating MAPE
 
@@ -824,11 +684,7 @@ ages.mape.high <- ages.random_high_ext %>% group_by(fraction, tree) %>%
             mape.mean = 
               mean(abs(True.age - mean.age)/True.age)*100,
             mape.median = 
-              mean(abs(True.age - median.age)/True.age)*100,
-            mape.mean.new = 
-              mean(abs(True.age - mean.age.new)/True.age)*100,
-            mape.median.new = 
-              mean(abs(True.age - median.age.new)/True.age)*100)
+              mean(abs(True.age - median.age)/True.age)*100)
 
 ages.mape.high$extinction <- "high"
 
@@ -841,9 +697,7 @@ ages.mape.sampling_high <- ages.mape.high %>%
 ages.mape.sampling_high$estimate <- factor(ages.mape.sampling_high$estimate,
                                          levels = c("mape.incomplete",
                                                     "mape.mean",
-                                                    "mape.median",
-                                                    "mape.mean.new",
-                                                    "mape.median.new"),
+                                                    "mape.median"),
                                          ordered = TRUE)
 
 ages.mape.sampling_high$fraction <- as.factor(ages.mape.sampling_high$fraction)
@@ -860,26 +714,11 @@ ages.mape.sampling_high$fraction <- as.factor(ages.mape.sampling_high$fraction)
 # no extinction -----------------------------------------------------------
 
 ages.full_no <- ages.random_no_ext %>% filter(fraction == 0.25) %>% 
-                select(-c(mean.age, mean.age.new, median.age, median.age.new))
+                select(-c(mean.age, median.age))
 
 
 # probability function ----------------------------------------------------
 
-full_no.list <- list()
-
-for(i in 1:nrow(ages.full_no)){
-  full_no.list[[i]] <- get_sp_age_prob_new(lam = 0.3,
-                                            mu = 0,
-                          node_age = ages.full_no$Estimated.age[i])
-}
-
-##mean age
-full_no.mean.age <- sapply(full_no.list, function(x) sum(x$time * x$prob))
-
-##median age
-full_no.median.age <- sapply(full_no.list, function(x)
-  weighted.median(x = x$time,
-                  w = x$prob))
 
 #using the new function provided by the reviewer
 #mean
@@ -908,37 +747,18 @@ for(i in 1:nrow(ages.full_no)){
 
 ##dataframe
 ages.full_no <- cbind(ages.full_no,
-                           full_no.mean.age, full_no.median.age,
                            full.no.mean.age.new, full.no.median.age.new) %>% 
-                     rename(mean.age = full_no.mean.age,
-                            median.age = full_no.median.age,
-                            mean.age.new = full.no.mean.age.new,
-                            median.age.new = full.no.median.age.new)
+                     rename(mean.age = full.no.mean.age.new,
+                            median.age = full.no.median.age.new)
 
 
 # intermediate extinction -------------------------------------------------
 
 ages.full_int <- ages.random_int_ext %>% filter(fraction == 0.25) %>% 
-               select(-c(mean.age, mean.age.new, median.age, median.age.new))
+               select(-c(mean.age, median.age))
 
 
 # probability function ----------------------------------------------------
-
-full_int.list <- list()
-
-for(i in 1:nrow(ages.full_int)){
-  full_int.list[[i]] <- get_sp_age_prob_new(lam = 0.3,
-                                           mu = 0.15,
-                                     node_age = ages.full_int$Estimated.age[i])
-}
-
-##mean age
-full_int.mean.age <- sapply(full_int.list, function(x) sum(x$time * x$prob))
-
-##median age
-full_int.median.age <- sapply(full_int.list, function(x)
-  weighted.median(x = x$time,
-                  w = x$prob))
 
 ######new function 
 #mean
@@ -966,37 +786,19 @@ for(i in 1:nrow(ages.full_int)){
 
 ##dataframe
 ages.full_int_prob <- cbind(ages.full_int,
-                           full_int.mean.age, full_int.median.age,
-                           full.int.mean.age.new, full.int.median.age.new) %>% 
-  rename(mean.age = full_int.mean.age,
-         median.age = full_int.median.age,
-         mean.age.new = full.int.mean.age.new,
-         median.age.new = full.int.median.age.new)
+                            full.int.mean.age.new, full.int.median.age.new) %>% 
+                  rename(mean.age = full.int.mean.age.new,
+                         median.age = full.int.median.age.new)
 
 
 # High extinction ---------------------------------------------------------
 
 ages.full_high  <- ages.random_high_ext %>% filter(fraction == 0.25) %>% 
-  select(-c(mean.age, mean.age.new, median.age, median.age.new))
+  select(-c(mean.age, median.age))
 
 
 # probability function ----------------------------------------------------
 
-full_high.list <- list()
-
-for(i in 1:nrow(ages.full_high)){
-  full_high.list[[i]] <- get_sp_age_prob_new(lam = 0.3,
-                                            mu = 0.25,
-                                            node_age = ages.full_high$Estimated.age[i])
-}
-
-##mean age
-full_high.mean.age <- sapply(full_high.list, function(x) sum(x$time * x$prob))
-
-##median age
-full_high.median.age <- sapply(full_high.list, function(x)
-  weighted.median(x = x$time,
-                  w = x$prob))
 
 ##new function
 #mean
@@ -1024,23 +826,21 @@ for(i in 1:nrow(ages.full_high)){
 
 ##dataframe
 ages.full_high_prob <- cbind(ages.full_high,
-                            full_high.mean.age, full_high.median.age,
                             full.high.mean.age.new, full.high.median.age.new) %>% 
-  rename(mean.age = full_high.mean.age,
-         median.age = full_high.median.age,
-         mean.age.new = full.high.mean.age.new,
-         median.age.new = full.high.median.age.new)
+  rename(mean.age = full.high.mean.age.new,
+         median.age = full.high.median.age.new)
 
 ##binding dataframes
 ages.full_total_prob <- rbind(ages.full_no,
                               ages.full_int_prob,
                               ages.full_high_prob)
 
+##saving
 write_csv(ages.full_total_prob,
       file = "results/data/processed/incomplete_sampling/ages.full_total_prob.csv")
 
-ages.full_total_prob <- 
-  read_csv(file = "results/data/processed/incomplete_sampling/ages.full_total_prob.csv")
+#ages.full_total_prob <- 
+  #read_csv(file = "results/data/processed/incomplete_sampling/ages.full_total_prob.csv")
 
 ####MAPE
 
@@ -1050,11 +850,7 @@ ages.mape.full <- ages.full_total_prob %>% group_by(extinction, tree) %>%
             mape.mean = 
               mean(abs(True.age - mean.age)/True.age)*100,
             mape.median = 
-              mean(abs(True.age - median.age)/True.age)*100,
-            mape.mean.new =
-              mean(abs(True.age - mean.age.new)/True.age)*100,
-            mape.median.new = 
-              mean(abs(True.age - median.age.new)/True.age)*100)
+              mean(abs(True.age - median.age)/True.age)*100)
             
 ages.mape.full$fraction <- "full"
 
@@ -1067,9 +863,7 @@ ages.mape.full.sampling <- ages.mape.full %>%
 ages.mape.full.sampling$estimate <- factor(ages.mape.full.sampling$estimate,
                                            levels = c("mape.incomplete",
                                                       "mape.mean",
-                                                      "mape.median",
-                                                      "mape.mean.new",
-                                                      "mape.median.new"),
+                                                      "mape.median"),
                                            ordered = TRUE)
 
 ages.mape.full.sampling$extinction <- factor(ages.mape.full.sampling$extinction,
@@ -1164,10 +958,7 @@ dev.off()
 
 ##Fully sampled
 
-full.plot <- ages.mape.sampling.tot %>% filter(fraction == "full",
-                                               estimate %in% c("mape.incomplete",
-                                                               "mape.mean.new",
-                                                               "mape.median.new")) %>% 
+full.plot <- ages.mape.sampling.tot %>% filter(fraction == "full") %>% 
          ggplot(aes(y = mape, x = estimate,
                                           fill = estimate))+
           geom_boxplot(outlier.shape = NA)+
@@ -1179,8 +970,8 @@ full.plot <- ages.mape.sampling.tot %>% filter(fraction == "full",
                                             "full" = "Fully sampled")))+
         scale_fill_manual(values = c("#1b9e77", "#d95f02", "#7570b3"),
                           name="Estimation",
-                          breaks=c("mape.incomplete", "mape.mean.new",
-                                   "mape.median.new"),
+                          breaks=c("mape.incomplete", "mape.mean",
+                                   "mape.median"),
                           labels=c("Phylogenetic", "Mean",
                                    "Median"))+
         ylim(0, 130)+
@@ -1194,10 +985,7 @@ full.plot <- ages.mape.sampling.tot %>% filter(fraction == "full",
 
 #### 25% missing species
 
-f25.plot <- ages.mape.sampling.tot %>% filter(fraction == "0.25",
-                                              estimate %in% c("mape.incomplete",
-                                                           "mape.mean.new",
-                                                         "mape.median.new")) %>% 
+f25.plot <- ages.mape.sampling.tot %>% filter(fraction == "0.25") %>% 
   ggplot(aes(y = mape, x = estimate,
              fill = estimate))+
   geom_boxplot(outlier.shape = NA)+
@@ -1209,7 +997,7 @@ f25.plot <- ages.mape.sampling.tot %>% filter(fraction == "0.25",
   scale_fill_manual(values = c("#1b9e77", "#d95f02", "#7570b3"),
                     name="Estimation",
                     breaks=c("mape.incomplete",
-                             "mape.mean.new", "mape.median.new"),
+                             "mape.mean", "mape.median"),
                     labels=c("Phylogenetic", "Mean",
                              "Median"))+
   ylim(0, 350)+
@@ -1222,10 +1010,7 @@ f25.plot <- ages.mape.sampling.tot %>% filter(fraction == "0.25",
 
 #### 50% missing species
 
-f50.plot <- ages.mape.sampling.tot %>% filter(fraction == "0.5",
-                                              estimate %in% c("mape.incomplete",
-                                                              "mape.mean.new",
-                                                         "mape.median.new")) %>% 
+f50.plot <- ages.mape.sampling.tot %>% filter(fraction == "0.5") %>% 
   ggplot(aes(y = mape, x = estimate,
              fill = estimate))+
   geom_boxplot(outlier.shape = NA)+
@@ -1237,7 +1022,7 @@ f50.plot <- ages.mape.sampling.tot %>% filter(fraction == "0.5",
   scale_fill_manual(values = c("#1b9e77", "#d95f02", "#7570b3"),
                     name="Estimation",
                     breaks=c("mape.incomplete", 
-                             "mape.mean.new", "mape.median.new"),
+                             "mape.mean", "mape.median"),
                     labels=c("Phylogenetic", "Mean",
                              "Median"))+
   ylim(0, 1050)+
@@ -1271,26 +1056,20 @@ dev.off()
 
 ages.delta <- ages.mape.total %>% group_by(fraction, extinction) %>%  
   summarise(delta.mean = mape.mean - mape.incomplete,
-            delta.median =  mape.median - mape.incomplete,
-            delta.mean.new = mape.mean.new - mape.incomplete,
-            delta.median.new = mape.median.new - mape.incomplete) %>% 
+            delta.median =  mape.median - mape.incomplete) %>% 
       pivot_longer(cols = starts_with("delta."),
                values_to = "delta", names_to = "estimate")
 
 #arranging factor
 ages.delta$estimate <- factor(ages.delta$estimate,
                               levels = c("delta.mean",
-                                         "delta.median",
-                                         "delta.mean.new",
-                                         "delta.median.new"),
+                                         "delta.median"),
                               ordered = TRUE)
 
 ##plots
 
 ##Fully sampled
-full.delta <- ages.delta %>% filter(fraction == "full",
-                                    estimate %in% c("delta.mean.new",
-                                                    "delta.median.new")) %>% 
+full.delta <- ages.delta %>% filter(fraction == "full") %>% 
       ggplot(aes(y = delta, x = estimate,
                  fill = estimate))+
         geom_boxplot(outlier.shape = NA)+
@@ -1304,7 +1083,7 @@ full.delta <- ages.delta %>% filter(fraction == "full",
         scale_fill_manual(values = c("#d8b365", "#5ab4ac"),
                           name="Estimation",
                           breaks=c(
-                                   "delta.mean.new", "delta.median.new"),
+                                   "delta.mean", "delta.median"),
                           labels=c("Mean",
                                    "Median"))+
         geom_hline(yintercept = 0, linetype = "dashed",
@@ -1321,8 +1100,8 @@ full.delta <- ages.delta %>% filter(fraction == "full",
 
 ##25% missing species
 f25.delta <- ages.delta %>% filter(fraction == "0.25",
-                                   estimate %in% c("delta.mean.new",
-                                                   "delta.median.new")) %>% 
+                                   estimate %in% c("delta.mean",
+                                                   "delta.median")) %>% 
   ggplot(aes(y = delta, x = estimate,
              fill = estimate))+
   geom_boxplot(outlier.shape = NA)+
@@ -1334,10 +1113,10 @@ f25.delta <- ages.delta %>% filter(fraction == "0.25",
              )))+
   scale_fill_manual(values = c("#d8b365", "#5ab4ac"),
                     name="Estimation",
-                    breaks=c("delta.mean.new", "delta.median.new"),
+                    breaks=c("delta.mean", "delta.median"),
                     labels=c(
-                             "Mean.new",
-                             "Median.new"))+
+                             "Mean",
+                             "Median"))+
   geom_hline(yintercept = 0, linetype = "dashed",
              size = 1, colour = "red")+
   #ylab(expression(bold(Delta* "MAPE")))+
@@ -1351,8 +1130,8 @@ f25.delta <- ages.delta %>% filter(fraction == "0.25",
 
 ##50% missing species
 f50.delta <- ages.delta %>% filter(fraction == "0.5",
-                                   estimate %in% c("delta.mean.new",
-                                                   "delta.median.new")) %>% 
+                                   estimate %in% c("delta.mean",
+                                                   "delta.median")) %>% 
   ggplot(aes(y = delta, x = estimate,
              fill = estimate))+
   geom_boxplot(outlier.shape = NA)+
@@ -1365,7 +1144,7 @@ f50.delta <- ages.delta %>% filter(fraction == "0.5",
   scale_fill_manual(values = c("#d8b365", "#5ab4ac"),
                     name="Estimation",
                     breaks=c(
-                             "delta.mean.new", "delta.median.new"),
+                             "delta.mean", "delta.median"),
                     labels=c("Mean",
                              "Median"))+
   geom_hline(yintercept = 0, linetype = "dashed",

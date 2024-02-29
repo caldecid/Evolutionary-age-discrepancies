@@ -62,7 +62,7 @@ tax.50.bif <- lapply(trees.50.missing, sim.taxonomy, beta = 1)
 ages.50.bif <- Map(getAgesExtantSpecies, tax.50.bif, trees.50.missing,
                    Tol = 1e-6)
 
-###########nonrandom incomplethe sampling of extant species#######################
+###########nonrandom incomplete sampling of extant species#######################
 
 ##the probability of not getting sample increases with age
 
@@ -136,11 +136,13 @@ ages.0.bif$species <- paste0(ages.0.bif$label,".",
 
 ##assigning the positive ADE through the IUCN status
 
-####intermediate extinction
-ages.0.bif$status <- discretize(ages.0.bif$rTrue.age, 
+##Fully sampled
+
+ages.0.bif <- ages.0.bif %>% group_by(tree) %>%
+                             mutate(status = discretize(True.age, 
                                 method = "frequency", 
                                 breaks = 5,
-                                labels = c("LC", "NT", "VU", "EN", "CR"))
+                                labels = c("LC", "NT", "VU", "EN", "CR")))
 
 ages.0.bif$status <- factor(ages.0.bif$status,
                             levels = c("LC", "NT", "VU", "EN", "CR"),
@@ -167,11 +169,13 @@ ages.25.bif$species <- paste0(ages.25.bif$label,".",
                               ages.25.bif$tree)
 
 ##assigning the positive ADE through the IUCN status
-####intermediate extinction
-ages.25.bif$status <- discretize(ages.25.bif$rTrue.age, 
+
+#25% missing
+ages.25.bif <- ages.25.bif %>% group_by(tree) %>% 
+                              mutate(status = discretize(True.age, 
                                  method = "frequency", 
                                  breaks = 5,
-                                 labels = c("LC", "NT", "VU", "EN", "CR"))
+                                 labels = c("LC", "NT", "VU", "EN", "CR")))
 
 ages.25.bif$status <- factor(ages.25.bif$status,
                              levels = c("LC", "NT", "VU", "EN", "CR"))
@@ -197,13 +201,15 @@ ages.50.bif$species <- paste0(ages.50.bif$label,".",
 
 ##assigning the positive ADE through the IUCN status
 ####intermediate extinction
-ages.50.bif$status <- discretize(ages.50.bif$rTrue.age, 
+ages.50.bif <- ages.50.bif %>% group_by(tree) %>% 
+                                mutate(status = discretize(True.age, 
                                  method = "frequency", 
                                  breaks = 5,
-                                 labels = c("LC", "NT", "VU", "EN", "CR"))
+                                 labels = c("LC", "NT", "VU", "EN", "CR")))
 
 ages.50.bif$status <- factor(ages.50.bif$status,
-                             levels = c("LC", "NT", "VU", "EN", "CR"))
+                             levels = c("LC", "NT", "VU", "EN", "CR"),
+                             ordered = TRUE)
 
 
 ##selecting ages.bif.0.25 columns
@@ -212,8 +218,8 @@ ages.bif.incomp.25 <- ages.bif.incomp.25 %>% select(species,
   rename(Incomp.age.25 = Incomp.age)
 
 ##merging ages.bif with ages.bif.0.25
-ages.total.0.25 <- left_join(ages.bif.incomp.25, ages.25.bif, 
-                             by = "species")
+ages.total.0.25 <- left_join(ages.25.bif, ages.bif.incomp.25,
+                             by = "species") %>% drop_na()
 
 ##selecting ages.bif.0.5 columns
 ages.bif.incomp.50 <- ages.bif.incomp.50 %>% select(species,
@@ -221,35 +227,15 @@ ages.bif.incomp.50 <- ages.bif.incomp.50 %>% select(species,
   rename(Incomp.age.50 = Incomp.age)
 
 ##merging the three dataframes
-ages.total.0.50.bif <- left_join(ages.bif.incomp.50, ages.50.bif,
-                                 by = "species")
+ages.total.0.50.bif <- left_join(ages.50.bif, ages.bif.incomp.50,
+                                 by = "species") %>% drop_na()
 
 
 
 # Correcting ages ---------------------------------------------------------
 
-###Previous probabilistic approach
 
-##fully sampled trees
-full.list <- list()
-
-for(i in 1:nrow(ages.0.bif)){
-  full.list[[i]] <- get_sp_age_prob_new(lam = 0.3,
-                                        mu = 0.15,
-                                        node_age = ages.0.bif$Estimated.age[i],
-                                        rho = 1)
-}
-
-##mean age
-full.mean.age <- sapply(full.list, function(x) sum(x$time * x$prob))
-
-##median age
-full.median.age <- sapply(full.list, function(x)
-  weighted.median(x = x$time,
-                  w = x$prob))
-
-
-###testing new funciton provided by the reviewer
+### new funciton provided by the reviewer
 
 #mean
 
@@ -278,43 +264,20 @@ for(i in 1:nrow(ages.0.bif)){
 
 
 ##binding
-ages.total.full <- cbind(ages.0.bif, full.mean.age, 
-                         full.median.age, full.mean.new,
-                         full.median.new) %>% 
-  rename(mean.age = full.mean.age,
-         median.age = full.median.age,
-         mean.new = full.mean.new,
-         median.new = full.median.new)
+ages.total.full <- cbind(ages.0.bif,
+                         mean.new = full.mean.new,
+                         median.new = full.median.new) 
 
 ##saving
 write_csv(ages.total.full,
           file = "results/data/processed/conservation_status/ages.full.sampled.csv")
 
 
-
+#ages.total.full <- read_csv(file = "results/data/processed/conservation_status/ages.full.sampled.csv")
 
 #######25% missing species
 
-#previous function
-
-f25.list.non <- list()
-
-for(i in 1:nrow(ages.total.0.25)){
-  f25.list.non[[i]] <- get_sp_age_prob_new(lam = 0.3,
-                                           mu = 0.15,
-                                           node_age = ages.total.0.25$Incomp.age.25[i],
-                                           rho = 0.75)
-}
-
-##mean age
-f25.mean.age <- sapply(f25.list.non, function(x) sum(x$time * x$prob))
-
-##median age
-f25.median.age <- sapply(f25.list.non, function(x)
-  weighted.median(x = x$time,
-                  w = x$prob))
-
-###testing new funciton provided by the reviewer
+###New function provided by the reviewer
 
 #mean
 
@@ -342,43 +305,18 @@ for(i in 1:nrow(ages.total.0.25)){
 
 
 ##binding
-ages.total.f25 <- cbind(ages.total.0.25, f25.mean.age, 
-                        f25.median.age,
-                        f25.mean.new, f25.median.new) %>% 
-  rename(mean.age = f25.mean.age,
-         median.age = f25.median.age,
-         mean.new = f25.mean.new,
-         median.new = f25.median.new)
+ages.total.f25 <- cbind(ages.total.0.25,
+                        mean.new = f25.mean.new,
+                        median.new = f25.median.new) 
 
 ##saving
 write_csv(ages.total.f25,
           file = "results/data/processed/conservation_status/ages.f25.sampled.csv")
 
-ages.total.f25 <- read_csv("results/data/processed/conservation_status/ages.f25.sampled.csv")
+#ages.total.f25 <- read_csv("results/data/processed/conservation_status/ages.f25.sampled.csv")
 
 ###50% missing species
-
-#previous function
-
-f50.list.non <- list()
-
-for(i in 1:nrow(ages.total.0.50.bif)){
-  f50.list.non[[i]] <- get_sp_age_prob_new(lam = 0.3,
-                                           mu = 0.15,
-                                           node_age = ages.total.0.50.bif$Incomp.age.50[i],
-                                           rho = 0.5)
-}
-
-##mean age
-f50.mean.age <- sapply(f50.list.non, function(x) sum(x$time * x$prob))
-
-##median age
-f50.median.age <- sapply(f50.list.non, function(x)
-  weighted.median(x = x$time,
-                  w = x$prob))
-
-
-###testing new funciton provided by the reviewer
+#new function provided by the reviewer
 
 #mean
 
@@ -405,19 +343,15 @@ for(i in 1:nrow(ages.total.0.50.bif)){
 
 
 ##binding
-ages.total.f50 <- cbind(ages.total.0.50.bif, f50.mean.age, 
-                        f50.median.age,
-                        f50.mean.new, f50.median.new) %>% 
-  rename(mean.age = f50.mean.age,
-         median.age = f50.median.age,
-         mean.new = f50.mean.new,
-         median.new = f50.median.new)
+ages.total.f50 <- cbind(ages.total.0.50.bif, 
+                        mean.new = f50.mean.new, 
+                        median.new = f50.median.new) 
 
 ##saving
 write_csv(ages.total.f50,
           file = "results/data/processed/conservation_status/ages.f50.sampled.csv")
 
-ages.total.f50 <- read_csv("results/data/processed/conservation_status/ages.f50.sampled.csv")
+#ages.total.f50 <- read_csv("results/data/processed/conservation_status/ages.f50.sampled.csv")
 
 
 ##Calculating the mean of each age for each category within each tree
@@ -427,8 +361,6 @@ ages.mean.full <- ages.total.full %>%
   group_by(tree, status) %>% 
   summarise(mean.true = mean(True.age),
             mean.full = mean(Estimated.age, na.rm = TRUE),
-            mean.mean = mean(mean.age, na.rm = TRUE),
-            mean.median = mean(median.age, na.rm = TRUE),
             mean.mean.new = mean(mean.new, na.rm = TRUE),
             mean.median.new = mean(median.new, na.rm = TRUE))
 
@@ -437,8 +369,6 @@ ages.mean.f25 <- ages.total.f25 %>%
   group_by(tree, status) %>% 
   summarise(mean.true = mean(True.age),
             mean.f25 = mean(Incomp.age.25, na.rm = TRUE),
-            mean.mean = mean(mean.age, na.rm = TRUE),
-            mean.median = mean(median.age, na.rm = TRUE),
             mean.mean.new = mean(mean.new, na.rm = TRUE),
             mean.median.new = mean(median.new, na.rm = TRUE))
 
@@ -447,8 +377,6 @@ ages.mean.f50 <- ages.total.f50 %>%
   group_by(tree, status) %>% 
   summarise(mean.true = mean(True.age),
             mean.f50 = mean(Incomp.age.50, na.rm = TRUE),
-            mean.mean = mean(mean.age, na.rm = TRUE),
-            mean.median = mean(median.age, na.rm = TRUE),
             mean.mean.new = mean(mean.new, na.rm = TRUE),
             mean.median.new = mean(median.new, na.rm = TRUE))
 
@@ -459,13 +387,9 @@ ages.mean.f50 <- ages.total.f50 %>%
 ages.rank.full <- ages.mean.full %>% group_by(tree) %>%
   mutate(true.rank = dense_rank(mean.true),
          full.rank = dense_rank(mean.full),
-         mean.rank = dense_rank(mean.mean),
-         median.rank = dense_rank(mean.median),
-         mean.new.rank = dense_rank(mean.mean.new),
+                mean.new.rank = dense_rank(mean.mean.new),
          median.new.rank = dense_rank(mean.median.new)) %>% 
   mutate(resp_full = if_else(true.rank == full.rank, 1, 0),
-         resp_mean = if_else(true.rank == mean.rank, 1, 0),
-         resp_median = if_else(true.rank == median.rank, 1,0),
          resp_mean_new = if_else(true.rank == mean.new.rank, 1, 0),
          resp_median_new = if_else(true.rank == median.new.rank, 1, 0))
 
@@ -474,13 +398,9 @@ ages.rank.full <- ages.mean.full %>% group_by(tree) %>%
 ages.rank.f25 <- ages.mean.f25 %>% group_by(tree) %>%
   mutate(true.rank = dense_rank(mean.true),
          f25.rank = dense_rank(mean.f25),
-         mean.rank = dense_rank(mean.mean),
-         median.rank = dense_rank(mean.median),
          mean.new.rank = dense_rank(mean.mean.new),
          median.new.rank = dense_rank(mean.median.new)) %>% 
   mutate(resp_f25 = if_else(true.rank == f25.rank, 1, 0),
-         resp_mean = if_else(true.rank == mean.rank, 1, 0),
-         resp_median = if_else(true.rank == median.rank, 1,0),
          resp_mean_new = if_else(true.rank == mean.new.rank, 1, 0),
          resp_median_new = if_else(true.rank == median.new.rank, 1, 0)) 
 
@@ -488,13 +408,9 @@ ages.rank.f25 <- ages.mean.f25 %>% group_by(tree) %>%
 ages.rank.f50 <- ages.mean.f50 %>% group_by(tree) %>%
   mutate(true.rank = dense_rank(mean.true),
          f50.rank = dense_rank(mean.f50),
-         mean.rank = dense_rank(mean.mean),
-         median.rank = dense_rank(mean.median),
          mean.new.rank = dense_rank(mean.mean.new),
          median.new.rank = dense_rank(mean.median.new)) %>% 
   mutate(resp_f50 = if_else(true.rank == f50.rank, 1, 0),
-         resp_mean = if_else(true.rank == mean.rank, 1, 0),
-         resp_median = if_else(true.rank == median.rank, 1,0),
          resp_mean_new = if_else(true.rank == mean.new.rank, 1, 0),
          resp_median_new = if_else(true.rank == median.new.rank, 1, 0)) 
 
@@ -510,19 +426,6 @@ ages.comparison.full <- ages.rank.full %>% group_by(tree) %>%
   mutate(error = n/1000*100)
 
 
-#Mean age previous function
-ages.comparison.mean.full <- ages.rank.full %>% group_by(tree) %>% 
-  summarise(sum_mean = sum(resp_mean, na.rm = TRUE)) %>% 
-  filter(sum_mean < 5) %>% 
-  count()%>% 
-  mutate(error = n/1000*100)
-
-#median age previous function
-ages.comparison.median.full <- ages.rank.full %>% group_by(tree) %>% 
-  summarise(sum_median = sum(resp_median, na.rm = TRUE)) %>% 
-  filter(sum_median < 5) %>% 
-  count() %>% 
-  mutate(error = n/1000*100)
 
 ###Mean age NEW function
 ages.comparison.mean.new.full <- ages.rank.full %>% group_by(tree) %>% 
@@ -549,19 +452,7 @@ ages.comparison.f25 <- ages.rank.f25 %>% group_by(tree) %>%
   mutate(error = n/1000*100)
 
 
-#mean age previous function
-ages.comparison.mean.f25 <- ages.rank.f25 %>% group_by(tree) %>% 
-  summarise(sum_mean = sum(resp_mean, na.rm = TRUE)) %>% 
-  filter(sum_mean < 5) %>% 
-  count()%>% 
-  mutate(error = n/1000*100)
 
-#median age previous function
-ages.comparison.median.f25 <- ages.rank.f25 %>% group_by(tree) %>% 
-  summarise(sum_median = sum(resp_median, na.rm = TRUE)) %>% 
-  filter(sum_median < 5) %>% 
-  count()%>% 
-  mutate(error = n/1000*100)
 
 #Mean age NEW function
 ages.comparison.mean.new.f25 <- ages.rank.f25 %>% group_by(tree) %>% 
@@ -582,24 +473,12 @@ ages.comparison.median.new.f25 <- ages.rank.f25 %>% group_by(tree) %>%
 #phylogenetic
 ages.comparison.f50 <- ages.rank.f50 %>% group_by(tree) %>% 
   summarise(sum_f50 = sum(resp_f50, na.rm = TRUE)) %>% 
-  filter(sum_f50 < 5) %>% 
+  filter(sum_f50 == 5) %>% 
   count()%>% 
   mutate(error = n/1000*100)
 
 
-#Mean age previous function
-ages.comparison.mean.f50 <- ages.rank.f50 %>% group_by(tree) %>% 
-  summarise(sum_mean = sum(resp_mean, na.rm = TRUE)) %>% 
-  filter(sum_mean < 5) %>% 
-  count()%>% 
-  mutate(error = n/1000*100)
 
-#Median age previous function
-ages.comparison.median.f50 <- ages.rank.f50 %>% group_by(tree) %>% 
-  summarise(sum_median = sum(resp_median, na.rm = TRUE)) %>% 
-  filter(sum_median < 5) %>% 
-  count()%>% 
-  mutate(error = n/1000*100)
 
 #Mean age NEW function
 ages.comparison.mean.new.f50 <- ages.rank.f50 %>% group_by(tree) %>% 
@@ -638,46 +517,6 @@ tree.incorrect.full <- ages.rank.full %>% group_by(tree) %>%
 tree.incorrect.full <- sample(tree.incorrect.full,
                               size = round(length(tree.incorrect.full)*0.1))
 
-##mean prob
-##correct estimations 
-tree.correct.mean.full <- ages.rank.full %>% group_by(tree) %>% 
-  summarise(sum_mean = sum(resp_mean)) %>% 
-  filter(sum_mean == 5) %>% 
-  pull(tree)
-
-tree.correct.mean.full <- sample(tree.correct.mean.full,
-                                 size = round(length(tree.correct.mean.full)*0.1))
-
-##incorrect estimations
-tree.incorrect.mean.full <- ages.rank.full %>% group_by(tree) %>% 
-  summarise(sum_mean = sum(resp_mean, na.rm = TRUE)) %>% 
-  filter(sum_mean < 5) %>% 
-  drop_na() %>% 
-  pull(tree)
-
-tree.incorrect.mean.full <- sample(tree.incorrect.mean.full,
-                                   size = round(length(tree.incorrect.mean.full)*0.1))
-
-
-##median prob
-##correct estimations 
-tree.correct.median.full <- ages.rank.full %>% group_by(tree) %>% 
-  summarise(sum_median = sum(resp_median)) %>% 
-  filter(sum_median == 5) %>% 
-  pull(tree)
-
-tree.correct.median.full <- sample(tree.correct.median.full,
-                                   size = round(length(tree.correct.median.full)*0.1))
-
-##incorrect estimations
-tree.incorrect.median.full <- ages.rank.full %>% group_by(tree) %>% 
-  summarise(sum_median = sum(resp_median, na.rm = TRUE)) %>% 
-  filter(sum_median < 5) %>% 
-  drop_na() %>% 
-  pull(tree)
-
-tree.incorrect.median.full <- sample(tree.incorrect.median.full,
-                                     size = round(length(tree.incorrect.median.full)*0.1))
 
 
 ####new function
@@ -743,48 +582,6 @@ tree.incorrect.f25 <- ages.rank.f25 %>% group_by(tree) %>%
 tree.incorrect.f25 <- sample(tree.incorrect.f25,
                              size = round(length(tree.incorrect.f25)*0.1))
 
-##mean prob
-##correct estimations 
-tree.correct.mean.f25 <- ages.rank.f25 %>% group_by(tree) %>% 
-  summarise(sum_mean = sum(resp_mean)) %>% 
-  filter(sum_mean == 5) %>% 
-  pull(tree)
-
-tree.correct.mean.f25 <- sample(tree.correct.mean.f25,
-                                size = round(length(tree.correct.mean.f25)*0.1))
-
-##incorrect estimations
-tree.incorrect.mean.f25 <- ages.rank.f25 %>% group_by(tree) %>% 
-  summarise(sum_mean = sum(resp_mean, na.rm = TRUE)) %>% 
-  filter(sum_mean < 5) %>% 
-  drop_na() %>% 
-  pull(tree)
-
-tree.incorrect.mean.f25 <- sample(tree.incorrect.mean.f25,
-                                  size = round(length(tree.incorrect.mean.f25)*0.1))
-
-
-##median prob
-##correct estimations 
-tree.correct.median.f25 <- ages.rank.f25 %>% group_by(tree) %>% 
-  summarise(sum_median = sum(resp_median)) %>% 
-  filter(sum_median == 5) %>% 
-  pull(tree)
-
-tree.correct.median.f25 <- sample(tree.correct.median.f25,
-                                  size = round(length(tree.correct.median.f25)*0.1))
-
-##incorrect estimations
-tree.incorrect.median.f25 <- ages.rank.f25 %>% group_by(tree) %>% 
-  summarise(sum_median = sum(resp_median, na.rm = TRUE)) %>% 
-  filter(sum_median < 5) %>% 
-  drop_na() %>% 
-  pull(tree)
-
-tree.incorrect.median.f25 <- sample(tree.incorrect.median.f25,
-                                    size = round(length(tree.incorrect.median.f25)*0.1))
-
-
 
 ##NEW mean prob
 ##correct estimations 
@@ -848,46 +645,6 @@ tree.incorrect.f50 <- ages.rank.f50 %>% group_by(tree) %>%
 tree.incorrect.f50 <- sample(tree.incorrect.f50,
                              size = round(length(tree.incorrect.f50)*0.1))
 
-##mean prob
-##correct estimations 
-tree.correct.mean.f50 <- ages.rank.f50 %>% group_by(tree) %>% 
-  summarise(sum_mean = sum(resp_mean)) %>% 
-  filter(sum_mean == 5) %>% 
-  pull(tree)
-
-tree.correct.mean.f50 <- sample(tree.correct.mean.f50,
-                                size = round(length(tree.correct.mean.f50)*0.1))
-
-##incorrect estimations
-tree.incorrect.mean.f50 <- ages.rank.f50 %>% group_by(tree) %>% 
-  summarise(sum_mean = sum(resp_mean, na.rm = TRUE)) %>% 
-  filter(sum_mean < 5) %>% 
-  drop_na() %>% 
-  pull(tree)
-
-tree.incorrect.mean.f50 <- sample(tree.incorrect.mean.f50,
-                                  size = round(length(tree.incorrect.mean.f50)*0.1))
-
-
-##median prob
-##correct estimations 
-tree.correct.median.f50 <- ages.rank.f50 %>% group_by(tree) %>% 
-  summarise(sum_median = sum(resp_median)) %>% 
-  filter(sum_median == 5) %>% 
-  pull(tree)
-
-tree.correct.median.f50 <- sample(tree.correct.median.f50,
-                                  size = round(length(tree.correct.median.f50)*0.1))
-
-##incorrect estimations
-tree.incorrect.median.f50 <- ages.rank.f50 %>% group_by(tree) %>% 
-  summarise(sum_median = sum(resp_median, na.rm = TRUE)) %>% 
-  filter(sum_median < 5) %>% 
-  drop_na() %>% 
-  pull(tree)
-
-tree.incorrect.median.f50 <- sample(tree.incorrect.median.f50,
-                                    size = round(length(tree.incorrect.median.f50)*0.1))
 
 ##mean NEW prob
 ##correct estimations 
@@ -1008,69 +765,6 @@ full.plot <- ggplot(ages.correct.full,
   theme(legend.position = "none",
         axis.text.x =element_blank())
 
-##mean datasets
-ages.correct.mean.full <- ages.mean.full %>% filter(tree %in%
-                                                      tree.correct.mean.full)
-
-##incorrect
-ages.incorrect.mean.full <- ages.mean.full %>% 
-  filter(tree %in% tree.incorrect.mean.full)
-
-##mean
-full.mean.plot<- ggplot(ages.correct.mean.full,
-                        aes(x = status, y = log(mean.mean +1), group = tree,
-                            color = "#7fc97f"))+
-  geom_point(size=3, shape = 21, fill="white", color = "#7fc97f")+
-  geom_line(alpha = 0.5, color = "#7fc97f")+
-  geom_point(data = ages.incorrect.mean.full,
-             size=3, shape = 21, fill="white",
-             alpha = 0.6, color = "#969696")+
-  geom_line(data = ages.incorrect.mean.full,
-            alpha = 0.6, color = "#969696")+
-  geom_text(data = ages.comparison.mean.full, aes(x = 1.7, y = 1.3,
-                                                  label = paste0("Error rate:", " ",error,
-                                                                 "%")),
-            inherit.aes = FALSE,
-            size = 3.2, 
-            family = "serif")+
-  theme_bw()+
-  ylab("Mean age (log)")+
-  xlab(NULL)+
-  mynamestheme+
-  theme(legend.position = "none",
-        axis.text.x = element_blank())
-
-##median dataset
-ages.correct.median.full <- ages.mean.full %>% filter(tree %in%
-                                                        tree.correct.median.full)
-
-##incorrect
-ages.incorrect.median.full <- ages.mean.full %>% 
-  filter(tree %in% tree.incorrect.median.full)
-
-##median
-full.median.plot<- ggplot(ages.correct.median.full,
-                          aes(x = status, y = log(mean.median +1), group = tree,
-                              color = "#beaed4"))+
-  geom_point(size=3, shape = 21, fill="white", color = "#beaed4")+
-  geom_line(alpha = 0.5, color = "#beaed4")+
-  geom_point(data = ages.incorrect.median.full,
-             size=3, shape = 21, fill="white",
-             alpha = 0.6, color = "#969696")+
-  geom_line(data = ages.incorrect.median.full,
-            alpha = 0.6, color = "#969696")+
-  geom_text(data = ages.comparison.median.full, aes(x = 1.7, y = 1.25,
-                                                    label = paste0("Error rate:", " ",error,
-                                                                   "%")),
-            inherit.aes = FALSE,
-            size = 3.2, 
-            family = "serif")+
-  theme_bw()+
-  ylab("Median age (log)")+
-  xlab(NULL)+
-  mynamestheme+
-  theme(legend.position = "none")
-
 
 ##mean NEW datasets
 ages.correct.mean.new.full <- ages.mean.full %>% filter(tree %in%
@@ -1083,22 +777,22 @@ ages.incorrect.mean.new.full <- ages.mean.full %>%
 ##mean
 full.mean.new.plot<- ggplot(ages.correct.mean.new.full,
                         aes(x = status, y = log(mean.mean.new +1), group = tree,
-                            color = "blue"))+
-  geom_point(size=3, shape = 21, fill="white", color = "blue")+
-  geom_line(alpha = 0.5, color = "blue")+
+                            color = "#7fc97f"))+
+  geom_point(size=3, shape = 21, fill="white", color = "#7fc97f")+
+  geom_line(alpha = 0.5, color = "#7fc97f")+
   geom_point(data = ages.incorrect.mean.new.full,
              size=3, shape = 21, fill="white",
              alpha = 0.6, color = "#969696")+
   geom_line(data = ages.incorrect.mean.new.full,
             alpha = 0.6, color = "#969696")+
-  geom_text(data = ages.comparison.mean.new.full, aes(x = 1.7, y = 1.3,
+  geom_text(data = ages.comparison.mean.new.full, aes(x = 1.8, y = 1.45,
                                    label = paste0("Error rate:", " ",error,
                                                            "%")),
             inherit.aes = FALSE,
             size = 3.2, 
             family = "serif")+
   theme_bw()+
-  ylab("Mean New age (log)")+
+  ylab("Mean age (log)")+
   xlab(NULL)+
   mynamestheme+
   theme(legend.position = "none",
@@ -1115,22 +809,22 @@ ages.incorrect.median.new.full <- ages.mean.full %>%
 ##median
 full.median.new.plot<- ggplot(ages.correct.median.new.full,
                           aes(x = status, y = log(mean.median.new +1), group = tree,
-                              color = "skyblue"))+
-  geom_point(size=3, shape = 21, fill="white", color = "skyblue")+
-  geom_line(alpha = 0.5, color = "skyblue")+
+                              color = "#beaed4"))+
+  geom_point(size=3, shape = 21, fill="white", color = "#beaed4")+
+  geom_line(alpha = 0.5, color = "#beaed4")+
   geom_point(data = ages.incorrect.median.new.full,
              size=3, shape = 21, fill="white",
              alpha = 0.6, color = "#969696")+
   geom_line(data = ages.incorrect.median.new.full,
             alpha = 0.6, color = "#969696")+
-  geom_text(data = ages.comparison.median.new.full, aes(x = 1.7, y = 1.25,
+  geom_text(data = ages.comparison.median.new.full, aes(x = 1.8, y = 1.52,
                                                     label = paste0("Error rate:", " ",error,
                                                                    "%")),
             inherit.aes = FALSE,
             size = 3.2, 
             family = "serif")+
   theme_bw()+
-  ylab("Median New age (log)")+
+  ylab("Median age (log)")+
   xlab(NULL)+
   mynamestheme+
   theme(legend.position = "none")
@@ -1159,7 +853,7 @@ f25.plot <- ggplot(ages.correct.f25,
              alpha = 0.4, color = "#969696")+
   geom_line(data = ages.incorrect.f25,
             alpha = 0.4, color = "#969696")+
-  geom_text(data = ages.comparison.f25, aes(x = 2.0, y = 2.1,
+  geom_text(data = ages.comparison.f25, aes(x = 2.0, y = 1.8,
                                             label = paste0("Error rate:", " ",error,
                                                            "%")),
             inherit.aes = FALSE,
@@ -1173,68 +867,6 @@ f25.plot <- ggplot(ages.correct.f25,
   theme(legend.position = "none",
         axis.text.x = element_blank())
 
-##mean datasets
-ages.correct.mean.f25 <- ages.mean.f25 %>% filter(tree %in%
-                                                    tree.correct.mean.f25)
-
-##incorrect
-ages.incorrect.mean.f25 <- ages.mean.f25 %>% 
-  filter(tree %in% tree.incorrect.mean.f25)
-
-##mean
-f25.mean.plot<- ggplot(ages.correct.mean.f25,
-                       aes(x = status, y = log(mean.mean +1), group = tree,
-                           color = "#7fc97f"))+
-  geom_point(size=3, shape = 21, fill="white", color = "#7fc97f")+
-  geom_line(alpha = 0.5, color = "#7fc97f")+
-  geom_point(data = ages.incorrect.mean.f25,
-             size=3, shape = 21, fill="white",
-             alpha = 0.6, color = "#969696")+
-  geom_line(data = ages.incorrect.mean.f25,
-            alpha = 0.6, color = "#969696")+
-  geom_text(data = ages.comparison.mean.f25, aes(x = 1.8, y = 1.2,
-                                                 label = paste0("Error rate:", " ",error,
-                                                                "%")),
-            inherit.aes = FALSE,
-            size = 3.2, 
-            family = "serif")+
-  theme_bw()+
-  ylab(NULL)+
-  xlab(NULL)+
-  mynamestheme+
-  theme(legend.position = "none",
-        axis.text.x = element_blank())
-
-##median dataset
-ages.correct.median.f25 <- ages.mean.f25 %>% filter(tree %in%
-                                                      tree.correct.median.f25)
-
-##incorrect
-ages.incorrect.median.f25 <- ages.mean.f25 %>% 
-  filter(tree %in% tree.incorrect.median.f25)
-
-##Median
-f25.median.plot<- ggplot(ages.correct.median.f25,
-                         aes(x = status, y = log(mean.median +1), group = tree,
-                             color = "#beaed4"))+
-  geom_point(size=3, shape = 21, fill="white", color = "#beaed4")+
-  geom_line(alpha = 0.5, color = "#beaed4")+
-  geom_point(data = ages.incorrect.median.f25,
-             size=3, shape = 21, fill="white",
-             alpha = 0.6, color = "#969696")+
-  geom_line(data = ages.incorrect.median.f25,
-            alpha = 0.6, color = "#969696")+
-  geom_text(data = ages.comparison.median.f25, aes(x = 1.72, y = 1.1,
-                                                   label = paste0("Error rate:", " ",error,
-                                                                  "%")),
-            inherit.aes = FALSE,
-            size = 3.2, 
-            family = "serif")+
-  theme_bw()+
-  ylab(NULL)+
-  xlab(NULL)+
-  mynamestheme+
-  theme(legend.position = "none")
 
 ##NEW mean datasets
 ages.correct.mean.new.f25 <- ages.mean.f25 %>% filter(tree %in%
@@ -1247,15 +879,15 @@ ages.incorrect.mean.new.f25 <- ages.mean.f25 %>%
 ##mean
 f25.mean.new.plot<- ggplot(ages.correct.mean.new.f25,
                        aes(x = status, y = log(mean.mean.new +1), group = tree,
-                           color = "blue"))+
-  geom_point(size=3, shape = 21, fill="white", color = "blue")+
-  geom_line(alpha = 0.5, color = "blue")+
+                           color = "#7fc97f"))+
+  geom_point(size=3, shape = 21, fill="white", color = "#7fc97f")+
+  geom_line(alpha = 0.5, color = "#7fc97f")+
   geom_point(data = ages.incorrect.mean.new.f25,
              size=3, shape = 21, fill="white",
              alpha = 0.6, color = "gray")+
   geom_line(data = ages.incorrect.mean.new.f25,
             alpha = 0.6, color = "#969696")+
-  geom_text(data = ages.comparison.mean.new.f25, aes(x = 1.8, y = 1.2,
+  geom_text(data = ages.comparison.mean.new.f25, aes(x = 1.8, y = 1.35,
                                                  label = paste0("Error rate:", " ",error,
                                                                 "%")),
             inherit.aes = FALSE,
@@ -1278,15 +910,15 @@ ages.incorrect.median.new.f25 <- ages.mean.f25 %>%  filter(tree %in% tree.incorr
 ##Median
 f25.median.new.plot<- ggplot(ages.correct.median.new.f25,
                          aes(x = status, y = log(mean.median.new +1), group = tree,
-                             color = "skyblue"))+
-  geom_point(size=3, shape = 21, fill="white", color = "skyblue")+
-  geom_line(alpha = 0.6, color = "skyblue")+
+                             color = "#beaed4"))+
+  geom_point(size=3, shape = 21, fill="white", color = "#beaed4")+
+  geom_line(alpha = 0.6, color = "#beaed4")+
   geom_point(data = ages.incorrect.median.new.f25,
              size=3, shape = 21, fill="white",
              alpha = 0.3, color = "#969696")+
   geom_line(data = ages.incorrect.median.new.f25,
             alpha = 0.3, color = "#969696")+
-  geom_text(data = ages.comparison.median.new.f25, aes(x = 1.72, y = 1.1,
+  geom_text(data = ages.comparison.median.new.f25, aes(x = 1.72, y = 1.26,
                                                    label = paste0("Error rate:", " ",error,
                                                                   "%")),
             inherit.aes = FALSE,
@@ -1322,7 +954,7 @@ f50.plot <- ggplot(ages.correct.f50,
              alpha = 0.4, color = "#969696")+
   geom_line(data = ages.incorrect.f50,
             alpha = 0.4, color = "#969696")+
-  geom_text(data = ages.comparison.f50, aes(x = 1.62, y = 2.1,
+  geom_text(data = ages.comparison.f50, aes(x = 1.72, y = 2.3,
                                             label = paste0("Error rate:", " ",error,
                                                            "%")),
             inherit.aes = FALSE,
@@ -1336,69 +968,6 @@ f50.plot <- ggplot(ages.correct.f50,
   theme(legend.position = "none",
         axis.text.x = element_blank())
 
-##mean datasets
-ages.correct.mean.f50 <- ages.mean.f50 %>% filter(tree %in%
-                                                    tree.correct.mean.f50)
-
-##incorrect
-ages.incorrect.mean.f50 <- ages.mean.f50 %>% 
-  filter(tree %in% tree.incorrect.mean.f50)
-
-##Mean
-f50.mean.plot<- ggplot(ages.correct.mean.f50,
-                       aes(x = status, y = log(mean.mean +1), group = tree,
-                           color = "#7fc97f"))+
-  geom_point(size=3, shape = 21, fill="white", color = "#7fc97f")+
-  geom_line(alpha = 0.5, color = "#7fc97f")+
-  geom_point(data = ages.incorrect.mean.f50,
-             size=3, shape = 21, fill="white",
-             alpha = 0.6, color = "#969696")+
-  geom_line(data = ages.incorrect.mean.f50,
-            alpha = 0.6, color = "#969696")+
-  geom_text(data = ages.comparison.mean.f50, aes(x = 1.65, y = 1.1,
-                                                 label = paste0("Error rate:", " ",error,
-                                                                "%")),
-            inherit.aes = FALSE,
-            size = 3.2, 
-            family = "serif")+
-  theme_bw()+
-  ylab(NULL)+
-  xlab(NULL)+
-  mynamestheme+
-  theme(legend.position = "none",
-        axis.text.x = element_blank())
-
-##median dataset
-ages.correct.median.f50 <- ages.mean.f50 %>% filter(tree %in%
-                                                      tree.correct.median.f50)
-
-##incorrect
-ages.incorrect.median.f50 <- ages.mean.f50 %>% 
-  filter(tree %in% tree.incorrect.median.f50)
-
-##median
-f50.median.plot<- ggplot(ages.correct.median.f50,
-                         aes(x = status, y = log(mean.median +1), group = tree,
-                             color = "#beaed4"))+
-  geom_point(size=3, shape = 21, fill="white", color = "#beaed4")+
-  geom_line(alpha = 0.3, color = "#beaed4")+
-  geom_point(data = ages.incorrect.median.f50,
-             size=3, shape = 21, fill="white",
-             alpha = 0.6, color = "#969696")+
-  geom_line(data = ages.incorrect.median.f50,
-            alpha = 0.6, color = "#969696")+
-  geom_text(data = ages.comparison.median.f50, aes(x = 1.7, y = 0.95,
-                                                   label = paste0("Error rate:", " ",error,
-                                                                  "%")),
-            inherit.aes = FALSE,
-            size = 3.2, 
-            family = "serif")+
-  theme_bw()+
-  ylab(NULL)+
-  xlab(NULL)+
-  mynamestheme+
-  theme(legend.position = "none")
-
 
 ##NEW mean datasets
 ages.correct.mean.new.f50 <- ages.mean.f50 %>% filter(tree %in%
@@ -1411,15 +980,15 @@ ages.incorrect.mean.new.f50 <- ages.mean.f50 %>%
 ##Mean
 f50.mean.new.plot<- ggplot(ages.correct.mean.new.f50,
                        aes(x = status, y = log(mean.mean.new +1), group = tree,
-                           color = "blue"))+
-  geom_point(size=3, shape = 21, fill="white", color = "blue")+
-  geom_line(alpha = 0.5, color = "blue")+
+                           color = "#7fc97f"))+
+  geom_point(size=3, shape = 21, fill="white", color = "#7fc97f")+
+  geom_line(alpha = 0.5, color = "#7fc97f")+
   geom_point(data = ages.incorrect.mean.new.f50,
              size=3, shape = 21, fill="white",
              alpha = 0.3, color = "#969696")+
   geom_line(data = ages.incorrect.mean.new.f50,
             alpha = 0.3, color = "#969696")+
-  geom_text(data = ages.comparison.mean.new.f50, aes(x = 1.65, y = 1.1,
+  geom_text(data = ages.comparison.mean.new.f50, aes(x = 1.75, y = 1.25,
                                                  label = paste0("Error rate:", " ",error,
                                                                 "%")),
             inherit.aes = FALSE,
@@ -1443,15 +1012,15 @@ ages.incorrect.median.new.f50 <- ages.mean.f50 %>%
 ##median
 f50.median.new.plot<- ggplot(ages.correct.median.new.f50,
                          aes(x = status, y = log(mean.median.new +1), group = tree,
-                             color = "skyblue"))+
-  geom_point(size=3, shape = 21, fill="white", color = "skyblue")+
-  geom_line(alpha = 0.6, color = "skyblue")+
+                             color = "#beaed4"))+
+  geom_point(size=3, shape = 21, fill="white", color = "#beaed4")+
+  geom_line(alpha = 0.6, color = "#beaed4")+
   geom_point(data = ages.incorrect.median.new.f50,
              size=3, shape = 21, fill="white",
              alpha = 0.3, color = "#969696")+
   geom_line(data = ages.incorrect.median.new.f50,
             alpha = 0.3, color = "#969696")+
-  geom_text(data = ages.comparison.median.new.f50, aes(x = 1.7, y = 0.95,
+  geom_text(data = ages.comparison.median.new.f50, aes(x = 1.8, y = 1.15,
                                    label = paste0("Error rate:", " ",error,
                                                                   "%")),
             inherit.aes = FALSE,
@@ -1469,7 +1038,7 @@ f50.median.new.plot<- ggplot(ages.correct.median.new.f50,
 
 ###png object
 png("text/figures/age_dependent_samp.png", 
-    width = 25, height = 22,
+    width = 18, height = 15,
     units = "cm", 
     pointsize = 8, res = 300)
 
@@ -1478,12 +1047,12 @@ bottom <- text_grob("Conservation status",
                     family = "serif", size = 13,  face = "bold")
 
 ##grid for plotting both figures
-x.full = grid.arrange(full.plot, full.mean.plot, full.median.plot,
-                      full.mean.new.plot, full.median.new.plot, nrow = 5)
-x.f25 = grid.arrange(f25.plot, f25.mean.plot, f25.median.plot,
-                     f25.mean.new.plot, f25.median.new.plot, nrow = 5)
-x.f50 = grid.arrange(f50.plot, f50.mean.plot, f50.median.plot,
-                     f50.mean.new.plot, f50.median.new.plot, nrow = 5)
+x.full = grid.arrange(full.plot,
+                      full.mean.new.plot, full.median.new.plot, nrow = 3)
+x.f25 = grid.arrange(f25.plot, 
+                     f25.mean.new.plot, f25.median.new.plot, nrow = 3)
+x.f50 = grid.arrange(f50.plot,
+                     f50.mean.new.plot, f50.median.new.plot, nrow = 3)
 
 grid.arrange(x.full, x.f25, x.f50, ncol = 3, bottom = bottom)
 dev.off()

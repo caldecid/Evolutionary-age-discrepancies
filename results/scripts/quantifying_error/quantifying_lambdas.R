@@ -78,7 +78,7 @@ scale.turnover <- q.error.scale %>% filter(speciation %in%
   xlab("True age")+
   ylab("Phylogenetic age")+
   scale_color_manual(values = c("#d95f02", "#7570b3"),
-                     name="Turnover",
+                     name="Extinction fraction",
                      breaks=c("[0,0.25]", "(0.75,1]"),
                      labels=c("Low [0-0.25]",
                               "High (0.75-0.99]"))+
@@ -110,7 +110,7 @@ scale.turnover.ana <- q.error.scale %>% filter(speciation %in%
   xlab("True age")+
   ylab("Phylogenetic age")+
   scale_color_manual(values = c("#d95f02", "#7570b3"),
-                     name="Turnover",
+                     name="Extinction fraction",
                      breaks=c("[0,0.25]", "(0.75,1]"),
                      labels=c("Low [0-0.25]",
                               "High (0.75-0.99]"))+
@@ -135,15 +135,24 @@ q.ext.bud.bif <- q.error.lam %>% filter(speciation %in%
 q.ext.bud.bif$lambda <- as.factor(q.ext.bud.bif$lambda)
 
 
+###model
+log.model = lm(turnover ~ log(mape), q.ext.bud.bif)
 
 ###Figure MAPE vs turnover
 png("text/figures/Figure4.MAPE.vs.turnover.png", width = 15, height = 10, units = "cm", 
     pointsize = 8, res = 300)
 
-mape.turn <- ggplot(q.ext.bud.bif, aes(x = turnover, y = mape))+
-  geom_point(alpha = 0.8, aes(color = lambda))+
-  scale_color_discrete("Speciation rates")+
+mape.turn <- ggplot(q.ext.bud.bif, aes(x = turnover, y = mape, color = lambda))+
+  geom_point(alpha = 0.4, aes(color = lambda))+
+  geom_smooth(aes(color = lambda), linewidth = 1.1, 
+              linetype = 2, method = "lm", se = FALSE,
+              formula = y ~ exp(x))+
+  scale_color_manual("Speciation rates",
+                     values = c("#66c2a5",
+                                "#fc8d62",
+                                "#8da0cb"))+
   facet_wrap(~speciation)+
+ 
   xlab("Extinction fraction")+
   ylab("MAPE")+
   theme_bw()
@@ -174,10 +183,16 @@ png("text/supplementary/SM2.mape.vs.turnover.png", width = 17, height = 10, unit
 
 mape.turn.ana <- q.ext.ana %>% filter(mape < 500) %>% 
   ggplot(aes(x = turnover, y = mape, lambda))+
-  geom_point(alpha = 0.8, aes(color = lambda))+
-  scale_color_discrete("Speciation rates")+
+  geom_point(alpha = 0.4, aes(color = lambda))+
+  geom_smooth(aes(color = lambda), linewidth = 1.1, 
+              linetype = 2, method = "lm", se = FALSE,
+              formula = y ~ exp(x))+
+  scale_color_manual("Speciation rates",
+                     values = c("#66c2a5",
+                                "#fc8d62",
+                                "#8da0cb"))+
   facet_wrap(~speciation, labeller = as_labeller(ana))+
-  xlab("Turnover")+
+  xlab("Extinction fraction")+
   ylab("MAPE (%)")+
   theme_bw()
 
