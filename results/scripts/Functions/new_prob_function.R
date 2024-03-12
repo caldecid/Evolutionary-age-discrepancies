@@ -44,7 +44,6 @@ meanAgeFunction <- function(lambda, mu, rho, v) {
   return(mean_age) 
 }
 
-
 medianAgeFunction <- function(lambda, mu, rho, v) {
   # get the integrated rate
   integrated_rate <- integratedRate(lambda, mu, rho, 0, v)

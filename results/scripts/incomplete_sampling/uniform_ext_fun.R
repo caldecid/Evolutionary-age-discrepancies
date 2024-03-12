@@ -894,6 +894,8 @@ ages.mape.total$fraction <- factor(ages.mape.total$fraction,
 write_csv(ages.mape.total, 
           file = "results/data/processed/incomplete_sampling/ages.mape.total.csv")
 
+ages.mape.total <- read_csv("results/data/processed/incomplete_sampling/ages.mape.total.csv")
+
 ######binding all ages.mape.sampling df
 ages.mape.sampling.tot <- rbind(ages.mape.sampling_no, ages.mape.sampling_int,
                                 ages.mape.sampling_high, ages.mape.full.sampling)
@@ -907,8 +909,13 @@ ages.mape.sampling.tot$fraction <- factor(ages.mape.sampling.tot$fraction,
                                           levels = c("full",
                                                      "0.25",
                                                      "0.5"))
+##saving
 write_csv(ages.mape.sampling.tot, 
   file = "results/data/processed/incomplete_sampling/ages.mape.sampling.csv")
+
+##read
+ages.mape.sampling <- read_csv("results/data/processed/incomplete_sampling/ages.mape.sampling.csv")
+
 
 # plots -------------------------------------------------------------------
 ## themes

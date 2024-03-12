@@ -1,12 +1,12 @@
 ### Yang and Rannala
-p0t <- function(rho, l, m, t){
+p.0t <- function(rho, l, m, t){
   # prob of 1 or more descendents
   p = rho * (l - m) / ( rho * l + (l * (1 - rho) - m) * exp((m - l) * t) )
   return(p)
 }
 
 p1t <- function(rho, l, m, t){
-  p = 1 / rho * p0t(rho, l, m, t) ^2 * exp((m - l) * t)
+  p = 1 / rho * p.0t(rho, l, m, t) ^2 * exp((m - l) * t)
   return(p)
 }
 
@@ -25,9 +25,9 @@ get_sp_age_prob_new <- function(lam, mu, node_age,
   # conditional prob of no events times the probability of sampling the one descendant
   p = p_no_events / p_node_age_PB * rho
   # prob of speciation age x prob sister lineage with >=1 descendendents
-  p_at_node = p[length(tot_t)] * p0t(rho, lam, mu, tot_t[length(tot_t)])
+  p_at_node = p[length(tot_t)] * p.0t(rho, lam, mu, tot_t[length(tot_t)])
   # prob of species age younger than node age x prob of no descendents on the other side
-  p_before_node = p_no_events[-length(tot_t)] * (1 - p0t(rho, lam, mu, tot_t[-length(tot_t)]))
+  p_before_node = p_no_events[-length(tot_t)] * (1 - p.0t(rho, lam, mu, tot_t[-length(tot_t)]))
   if (max(p_before_node) > 0){
     # normalize by the prob of dpeciation at the node
     p_before_node = p_before_node / sum(p_before_node) * (1 - p_at_node)
