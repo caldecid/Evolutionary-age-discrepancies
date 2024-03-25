@@ -33,6 +33,9 @@ library(grid)
 library(spatstat)
 library(modi)
 library(diversitree)
+library(TreeSim)
+library(ggbreak)
+library(logr)
 
 # set working directory -----------
 wd <- "/home/alunos/Documents/caldecid/Evolutionary-age-discrepancies"

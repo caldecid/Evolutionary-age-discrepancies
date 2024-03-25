@@ -914,7 +914,7 @@ write_csv(ages.mape.sampling.tot,
   file = "results/data/processed/incomplete_sampling/ages.mape.sampling.csv")
 
 ##read
-ages.mape.sampling <- read_csv("results/data/processed/incomplete_sampling/ages.mape.sampling.csv")
+ages.mape.sampling.tot <- read_csv("results/data/processed/incomplete_sampling/ages.mape.sampling.csv")
 
 
 # plots -------------------------------------------------------------------
@@ -1042,9 +1042,8 @@ f50.plot <- ages.mape.sampling.tot %>% filter(fraction == "0.5") %>%
 
 
 ##plot grid
-png("text/figures/MAPE.sampling.new.png", 
-    width = 17, height = 20, units = "cm", 
-    pointsize = 8, res = 300)
+pdf("text/figures/MAPE.sampling.pdf",
+    height = 8.5)
 
 
 ##left

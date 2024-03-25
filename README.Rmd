@@ -1,10 +1,33 @@
 
-
-## Repository of "On the estimation of species age from phylogenetic trees"
+## Repository of "Challenges in estimating species age from phylogenetic trees"
 
 
 R scripts, functions and data to replicate the analysis in the manuscript. This repository follows the computational notebook structure proposed by Figueiredo et al. 2022 (https://doi.org/10.1371/journal.pcbi.1010356)
 
 
-The manuscripts possesses four methodological sections (associated to three folders): i) Quantitative error and ii) Qualitative error (quantifying_error); iii) Stochastic ages function (stochastic_sp_age); and iv) Extinction signal (conservation_status). The folders are inside "data/processed/" and "scripts" folder. Inside the latter there is also the "Functions" folder which has the necessary functions for running our analysis. 
+The manuscripts possesses six methodological sections (associated to four folders):
 
+i) Simulating species ages; ii) Error in equating phylogenetic and species age; and iii) Impact of age error in comparing species ages ---- correspond to the folder "quantifying_error".
+
+iv) Error in the phylogenetic age due to uniform incomplete sampling ---- correspond to the folder "incomplete_sampling".
+
+v) A probabilistic model to infer species age is divided in three subsections:
+  v.1) The probabilistic model's functions is inside the script:
+           "Functions/new_prob_function.R"
+   v.2) Evaluating the accuracy of the probabilistic estimator is inside the script:
+        "incomplete_sampling/uniform_ext_fun.R".
+   v.3) Assessing the function's performance and limitations on an empirical dataset
+        and Comparing the species ages (phylogenetic, fossil, and corrected) are
+        inside the script: "quantifying_error/empirical.example.R"
+
+vi) Simulation of age-dependent extinction is divided in two subsections:
+     vi.1) Complete sampling and three extinction scenarios is inside the script
+         "Conservation_status/conservation.R".
+     vi.2) Incomplete sampling and intermediate extinction scenario is inside the 
+           script: "incomplete_sampling/nonrandom_sampling.R".
+
+We also provide the script of the Figure SM5, which is the stochastic birth-death simulations, for comparing an validating our function:
+"bifurcating_fun_results/dist_ex.R"
+
+The auxiliary functions for calculating species ages and estimating diversification
+rates from phylogenies are inside the script: "Functions/auxiliary_functions.R"

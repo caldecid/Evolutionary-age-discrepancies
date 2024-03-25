@@ -141,17 +141,16 @@ mammals_emp_pivot <- mammals_emp %>%
 
 ##########Figure
 mynamestheme <- theme(strip.text = element_text(family = "serif", size = (9)),
-                      plot.title = element_text(family = "serif", size = (12),
+                      plot.title = element_text(family = "serif", size = (15),
                                                 face = "bold", hjust = 0.5),
-                      axis.title = element_text(family = "serif", size = (11),
+                      axis.title = element_text(family = "serif", size = (12),
                                                 face = "bold"),
-                      axis.text = element_text(family = "serif", size = (9)),
-                      axis.text.y = element_text(family = "serif", size = (10),
-                                                 face = "italic"),
+                      axis.text = element_text(family = "serif", size = (11)),
+                      
                       legend.title = element_text(family = "serif", size = (11),
                                                   face = "bold"),
                       legend.text = element_text(family = "serif", size = (10)),
-                      legend.background = element_rect(fill= "grey",
+                      legend.background = element_rect(fill= "white",
                                                        size=.5, linetype="dotted"),
                       legend.position = "bottom")
 
@@ -259,7 +258,7 @@ int.phy = ggplot(mammals_int, aes(x = Estimated.age, y = mean.age))+
   ylim(0, 11)+
   geom_point(data = ind_int, aes(x = Estimated.age, y = mean.age), 
              size = 3.5, color = "red", alpha = 0.9)+
-  geom_poitn(data = )
+  
   xlab("Phylogenetic age (myr)")+
   ylab("Corrected age (myr)")+
   #ggtitle("int extinction fraction")+
@@ -399,13 +398,9 @@ high.comp <- ind_high_pivot %>%
 
 
 
-##only the mean.ages changes for joining
-ind_low_pivot = ind_low_pivot %>% filter(type == "mean.age")
 
-ind_int_pivot = ind_int_pivot %>% filter(type == "mean.age")
 
-#####joining pivot dataframes
-ind_pivot = rbind(ind_low_pivot, ind_int_pivot, ind_high_pivot)
+
 
 
 ##organizing factors
@@ -448,7 +443,8 @@ dev.off()
 ##all mammals phylo age vs corrected age
 
 ######line plots
-line_plot <-  ggplot(mammals_emp, aes(x = Estimated.age, y = mean.age, color = epsilon))+
+line_plot <-  ggplot(mammals_emp, aes(x = Estimated.age, y = mean.age,
+                                      color = epsilon))+
   geom_point(alpha = 0.9)+
   xlim(0,11)+
   ylim(0, 11)+
@@ -513,12 +509,14 @@ bar_empirical <-  ggplot(NULL, aes(x = species, y = ages, fill = type))+
   xlab(NULL)+
   #scale_y_discrete(position = "right")+
   mynamestheme+
-  theme(legend.position="none")
+  theme(legend.position="none",
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank())
 
 
-##png object
-png("text/figures/Figure.empirical.all.ex.png", width = 25,
-    height = 15, units = "cm", 
+##pdf object
+png("text/figures/Figure.empirical.all.ex.png", width = 28,
+    height = 20, units = "cm", 
     pointsize = 8, res = 300)
 
 
@@ -528,35 +526,103 @@ grid.arrange(line_plot, bar_empirical,
 dev.off()
 
 
+# histograms --------------------------------------------------------------
 
+##Changing the levels order to plot
+mammals_emp$epsilon <- factor(mammals_emp$epsilon, levels = c("low",
+                                                              "int",
+                                                              "high"),
+                              ordered = TRUE)
 
-##########mean age alone###############
-png("text/supplementary/Figure.label.ex.png", width = 25,
-    height = 15, units = "cm", 
+##calling only a subset of mammals_emp for obtaining the phylogenetic data
+
+mam_phy_age <- mammals_emp %>% filter(epsilon == "high")
+
+png("text/figures/hist_mammals.png", width = 22,
+    height = 20, units = "cm", 
     pointsize = 8, res = 300)
 
-ind_pivot %>% filter(type == "mean.age") %>% 
-  ggplot(aes(x = species, y = ages, alpha = epsilon))+
-  geom_col(position = "identity", fill = "#66c2a5")+
-  scale_x_discrete(limits = c(levels(ind_pivot$species)),
-                   labels = c("Ursus arctos",
-                              "Acinonyx jubatus",
-                              "Homo sapiens",
-                              "Balaena mysticetus"))+
-  scale_alpha_manual(name = "Extinction fraction",
-                     labels = c("Low", "Intermediate",
-                                "High"),
-                     values = c(0.3, 0.6, 0.9))+
-  scale_y_reverse()+
-  coord_flip()+
-  guides(y = "none",
-         y.sec = "axis")+
-  ylab("Time (myrs)")+
-  xlab(NULL)+
+
+mammals_emp %>% 
+  ggplot(aes(mean.age,
+             fill = epsilon))+
+  geom_histogram(data = mam_phy_age, aes(Estimated.age),
+                 position = "identity", binwidth = 0.2, fill = "red")+
+  geom_histogram(position = "identity", binwidth = 0.2)+
+  
+ 
+  scale_fill_manual(values = c("lightgrey", 
+                               "#969696",
+                               "#525252"),
+                    name="Extinction fraction",
+                    breaks=c("low",
+                             "int", 
+                             "high"),
+                    labels=c("Low",
+                             "Intermediate",
+                             "High"))+
+  
+  xlab("Corrected age")+
+  ylab("Number of species")+
+  
   theme_bw()+
-  mynamestheme
-#theme(legend.position="none")
+  scale_x_continuous(expand = c(0,0),
+                  limits = c(0,10)) +
+  mynamestheme+
+  theme(legend.position = "none",
+        axis.title = element_text(family = "serif", size = (24),
+                                  face = "bold"),
+        axis.text = element_text(family = "serif", size = (22)))
+
+
 dev.off()
+
+
+# Boxplot of species ages for different epsilon ---------------------------
+
+#calling fossil carnivora data from "Estimating Age-Dependent Extinction: 
+#Contrasting Evidence from Fossils and Phylogenies" (Hagen et al. 2017)
+fossil_car <- read_delim(file = "results/data/processed/quantifying_error/all_carnivora_Neogene_combined_10_files.log",
+                         col_names = TRUE)
+
+
+mam_emp_pivot <- mammals_emp %>% filter(Estimated.age <= 11) %>% 
+                        select(species, epsilon, mean.age) %>% 
+                        pivot_wider(names_from = epsilon,
+                              values_from = mean.age)  %>%
+                  left_join(mam_phy_age, by = "species") %>% 
+                 select(-c(lambda, mu, epsilon, mean.age, root, rPhylo, rMean)) %>% 
+                pivot_longer(cols = !species, names_to = "type",
+                             values_to = "Ages")
+
+##factor
+mam_emp_pivot$type <- factor(mam_emp_pivot$type, levels = c("low",
+                                                            "int",
+                                                            "high",
+                                                            "Estimated.age"),
+                             ordered = TRUE)
+
+
+ggplot(mam_emp_pivot, aes(x = type, y = Ages, fill = type))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_boxplot(data = fossil_car, aes(y = mean_longevity_0), 
+               fill = "green", outlier.shape = NA)+
+  scale_fill_manual(values = c("lightgrey", 
+                               "#969696",
+                               "#525252",
+                               "red"),
+                    name="Extinction fraction",
+                    breaks=c("low",
+                             "int", 
+                             "high",
+                             "Estimated.age"),
+                    labels=c("Low",
+                             "Intermediate",
+                             "High",
+                             "Phylogenetic"))+
+  ylab("Species ages")+
+  ylim(c(0,8))+
+  mynamestheme
 
 
 
