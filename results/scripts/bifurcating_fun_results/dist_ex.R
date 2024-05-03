@@ -12,7 +12,7 @@ rho.s <- c(1, 0.75, 0.50)
 ##fix parameters
 lambda <- 0.3
 branching_time <- 3
-reps <- 5000
+reps <- 100000
 
 ##list for keeping datasets
 ##data general for
@@ -504,7 +504,7 @@ high.f50 <- data.high.f50 %>% filter(sp_ages < branching_time) %>%
 #############plotting 
 
 ##plot grid
-pdf("text/supplementary/dist.ex.rho.pdf", width = 8.5)
+pdf("text/supplementary/dist.ex.rho.2.pdf", width = 8.5)
 
 
 ##left
