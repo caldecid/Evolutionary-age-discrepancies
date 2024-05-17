@@ -504,7 +504,9 @@ high.f50 <- data.high.f50 %>% filter(sp_ages < branching_time) %>%
 #############plotting 
 
 ##plot grid
-pdf("text/supplementary/dist.ex.rho.2.pdf", width = 8.5)
+png("text/supplementary/dist.ex.rho.png", width = 22, height = 17,
+    units = "cm", 
+    pointsize = 8, res = 300)
 
 
 ##left

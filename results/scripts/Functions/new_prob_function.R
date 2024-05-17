@@ -119,13 +119,14 @@ forwardSimulate <- function(lambda, mu, rho, time) {
   return(species$start[species$status == "alive"])
 }
 
-########updated simulator
+
+
+###Updated simulator corrected
 simSpAge <-function(branching_time, lambda, mu, rho, reps, batch=100){
   sp_ages <- c()        
   repeat {
     trees = sim.bd.age(age=branching_time, lambda, mu, 
-                       frac=rho, numbsim=batch, complete = TRUE,mrca=FALSE)
-    
+                       frac=rho, numbsim=batch, complete = TRUE, mrca=FALSE)
     for (i in 1:batch){
       tree_i = trees[[i]]
       if (class(tree_i) == "numeric"){
@@ -136,9 +137,9 @@ simSpAge <-function(branching_time, lambda, mu, rho, reps, batch=100){
         extant = getExtant(tree_i)
         N = sum(rbinom(length(extant), size=1, prob=rho))
         if (N == 1){
-          tr = keep.tip(tree_i, extant)
-          a = as.vector(calculate_tip_ages(tr)$tip.age)
-          sp_ages <- c(sp_ages, a[sample(1:length(a), 1)])
+          age_all = calculate_tip_ages(tree_i)
+          a = age_all[age_all$tip == sample(extant, 1), 2]
+          sp_ages <- c(sp_ages, a)
         } 
       }   
       if (length(sp_ages) >= reps){
